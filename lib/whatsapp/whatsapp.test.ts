@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { MEDIA_PLACEHOLDER, buildConversations, detectOwner, summarize } from "./analyze";
 import { extractChatsFromZip } from "./files";
 import { parseExport } from "./parse";
-import { SAMPLE_CHATS, SAMPLE_CHATS_EN } from "./sample";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { SAMPLE_SETS } from "./sample";
 
 const LRM = "‎";
 const NNBSP = " ";
@@ -175,15 +177,19 @@ describe("zip", () => {
   });
 });
 
-describe("chats de ejemplo", () => {
-  it.each([
-    ["es", SAMPLE_CHATS, "Martina"],
-    ["en", SAMPLE_CHATS_EN, "Emma"],
-  ] as const)("%s: se parsean y el dueño se detecta con certeza", (lang, files, owner) => {
-    const chats = files.map((f) => parseExport(f.text, f.name));
-    expect(chats.every((c) => c.format && c.language === lang)).toBe(true);
-    const guess = detectOwner(chats);
-    expect(guess).toMatchObject({ owner, confident: true });
-    expect(buildConversations(chats, owner).length).toBeGreaterThanOrEqual(3);
+describe("sets de ejemplo (public/samples)", () => {
+  it.each(SAMPLE_SETS.map((set) => [set.id, set] as const))("%s: se parsea entero y detecta al dueño", (_, set) => {
+    const chats = set.files.map((name) =>
+      parseExport(readFileSync(join(__dirname, "../../public/samples", set.id, name), "utf8"), name),
+    );
+    for (const chat of chats) {
+      expect(chat.format, chat.fileName).not.toBeNull();
+      expect(chat.language, chat.fileName).toBe(set.lang);
+      expect(chat.isGroup, chat.fileName).toBe(false);
+    }
+    expect(detectOwner(chats)).toMatchObject({ owner: set.owner, confident: true });
+    const convs = buildConversations(chats, set.owner);
+    expect(convs.length).toBeGreaterThanOrEqual(set.files.length);
+    expect(summarize(convs).pairs).toBeGreaterThanOrEqual(set.files.length);
   });
 });

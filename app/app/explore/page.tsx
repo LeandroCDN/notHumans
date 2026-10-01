@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { ExploreView } from "@/components/nothuman/explore-view";
 
 export default function ExploreNotHumans() {
-  return <ComingSoon section="explore" />;
+  return <ExploreView />;
 }

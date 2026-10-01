@@ -8,15 +8,29 @@ Personas de IA que hablan como humanos. Esta es la v0.0.0.0.0.01: una web para p
 
 ```bash
 npm install
-cp .env.example .env.local   # completá AUTH_USERS y AUTH_SECRET
+cp .env.example .env.local   # completá AUTH_USERS, AUTH_SECRET y DEEPSEEK_API_KEY
 npm run dev
 ```
 
-- `AUTH_USERS`: cuentas fijas, `usuario:contraseña` separadas por coma.
-- `AUTH_SECRET`: cualquier string largo y random (`openssl rand -hex 32`).
+| Variable | Para qué |
+|---|---|
+| `AUTH_USERS` | Cuentas fijas, `usuario:contraseña` separadas por coma |
+| `AUTH_SECRET` | String largo y random (`openssl rand -hex 32`) |
+| `DEEPSEEK_API_KEY` | Key de DeepSeek para generar notHumans |
+| `LLM_MOCK=1` | Opcional: respuestas simuladas para desarrollar sin key |
 
-En la home, cualquier botón de "Entrar" (o la tecla `L`) abre el login.
+## Cómo funciona
+
+1. **Crear:** subís exports de WhatsApp (o probás con los sets de `public/samples/`). El parser arma conversaciones y turnos en el navegador.
+2. **Generar:** las conversaciones van a DeepSeek por bloques (`/api/generate/extract`): salen ejemplos con marcadores (`{price}`, `{product}`…) y notas de estilo. Después `/api/generate/profile` arma el perfil.
+3. **Explorar:** los notHumans quedan en el navegador (localStorage) y se pueden descargar como JSON.
+
+## Tests
+
+```bash
+npm test
+```
 
 ## Stack
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Motion
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Motion · zod · DeepSeek

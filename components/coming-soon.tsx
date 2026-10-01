@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useI18n } from "./i18n";
 
 /** Pantalla de "todavía no está" para las secciones que faltan. */
-export function ComingSoon({ section }: { section: "explore" }) {
+export function ComingSoon({ section, cta }: { section: "explore"; cta?: { href: string; label: string } }) {
   const { t } = useI18n();
   const { eyebrow, title, accent, body } = t[section];
   return (
@@ -23,10 +23,19 @@ export function ComingSoon({ section }: { section: "explore" }) {
           {title} <em className="text-acid">{accent}</em>
         </h1>
         <p className="mt-6 max-w-xl text-lg text-white/55">{body}</p>
-        <p className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 font-mono text-xs text-white/40">
-          <span className="size-1.5 animate-pulse rounded-full bg-rose" />
-          {t.common.soon}
-        </p>
+        {cta ? (
+          <Link
+            href={cta.href}
+            className="mt-10 inline-flex rounded-full bg-acid px-6 py-3 font-medium text-ink transition hover:scale-[1.03]"
+          >
+            {cta.label}
+          </Link>
+        ) : (
+          <p className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 font-mono text-xs text-white/40">
+            <span className="size-1.5 animate-pulse rounded-full bg-rose" />
+            {t.common.soon}
+          </p>
+        )}
       </motion.div>
     </main>
   );

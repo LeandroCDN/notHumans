@@ -6,12 +6,13 @@ import { useMemo, useState } from "react";
 import { buildConversations, detectOwner, summarize, usableChats } from "@/lib/whatsapp/analyze";
 import { type ChatFile, readChatFiles } from "@/lib/whatsapp/files";
 import { parseExport } from "@/lib/whatsapp/parse";
-import { SAMPLE_CHATS, SAMPLE_CHATS_EN } from "@/lib/whatsapp/sample";
+import { SAMPLE_SETS, type SampleSet, loadSampleSet } from "@/lib/whatsapp/sample";
 import { useI18n } from "../i18n";
 import { FileList, type FileEntry, OwnerPicker, Personality, Stats } from "./analysis";
 import { BusinessForm, EMPTY_BUSINESS } from "./business-form";
 import { ConversationViewer } from "./conversation-viewer";
 import { Dropzone } from "./dropzone";
+import { GenerateSection } from "./generate";
 
 const reveal = {
   initial: { opacity: 0, y: 40, filter: "blur(10px)" },
@@ -21,7 +22,7 @@ const reveal = {
 };
 
 export function CreateView() {
-  const { locale, t: dict } = useI18n();
+  const { t: dict } = useI18n();
   const t = dict.create;
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [pickedOwner, setPickedOwner] = useState<string | null>(null);
@@ -46,6 +47,15 @@ export function CreateView() {
       }
       return next;
     });
+  }
+
+  async function trySample(set: SampleSet) {
+    try {
+      addChatFiles(await loadSampleSet(set));
+      setBusiness(set.business);
+    } catch {
+      setEntries((prev) => [...prev, { key: `${set.id}:error`, error: t.openError, fileName: set.id }]);
+    }
   }
 
   async function onFiles(files: File[]) {
@@ -84,13 +94,20 @@ export function CreateView() {
               onRemove={(key) => setEntries((prev) => prev.filter((e) => e.key !== key))}
             />
           ) : (
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <button
-                onClick={() => addChatFiles(locale === "es" ? SAMPLE_CHATS : SAMPLE_CHATS_EN)}
-                className="font-mono text-sm text-acid underline decoration-acid/30 underline-offset-4 transition hover:decoration-acid"
-              >
-                {t.trySample}
-              </button>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mr-1 font-mono text-sm text-white/45">{t.tryWith}</span>
+                {SAMPLE_SETS.map((set) => (
+                  <motion.button
+                    key={set.id}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => trySample(set)}
+                    className="rounded-full border border-acid/30 px-4 py-2 text-sm text-acid transition hover:bg-acid hover:text-ink"
+                  >
+                    {t.samples[set.id]}
+                  </motion.button>
+                ))}
+              </div>
               <HowToExport />
             </div>
           )}
@@ -124,15 +141,11 @@ export function CreateView() {
               <BusinessForm value={business} onChange={setBusiness} />
             </Section>
 
-            <motion.div {...reveal} className="mt-16 flex flex-col items-start gap-3 border-t border-white/10 pt-10">
-              <button
-                disabled
-                className="cursor-not-allowed rounded-full bg-acid/30 px-8 py-4 text-lg font-medium text-ink/60"
-              >
-                {t.generate}
-              </button>
-              <p className="font-mono text-xs text-white/40">{t.generateSoon}</p>
-            </motion.div>
+            {owner && conversations.length > 0 && (
+              <Section n="5" title={dict.generate.title} sub={dict.generate.sub}>
+                <GenerateSection conversations={conversations} owner={owner} business={business} />
+              </Section>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
