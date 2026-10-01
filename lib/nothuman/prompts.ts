@@ -1,4 +1,4 @@
-import { INTENTS, PLACEHOLDERS, type BusinessInput } from "./schema";
+import { type Example, INTENTS, PLACEHOLDERS, type BusinessInput, type Profile } from "./schema";
 
 // Los prompts van en inglés (los modelos los siguen mejor) y piden explícitamente el idioma de salida.
 // Todo lo fijo va primero: así las llamadas de un mismo notHuman comparten prefijo y el proveedor lo cachea.
@@ -78,4 +78,51 @@ The user will send style notes (from several batches of chats) and real reply ex
 
 Write summary, register, capitalization, punctuation, sales, complaints and doNots in ${LANG_NAME[uiLang]}.
 Copy greetings, signOffs and catchphrases verbatim in the chats' original language. When the notes disagree, follow what most batches say.`;
+}
+
+export type ChatPersona = { name: string; owner: string; business: BusinessInput; profile: Profile; examples: Example[] };
+
+const LENGTH_HINT = {
+  very_short: "very short (a few words)",
+  short: "short (one line)",
+  medium: "medium (a couple of lines)",
+  long: "long",
+} as const;
+
+/**
+ * El notHuman respondiendo a un cliente. Todo es fijo por notHuman (perfil + ejemplos canónicos),
+ * así de un mensaje al siguiente el proveedor sirve el system y el historial desde la caché.
+ */
+export function chatSystemPrompt(p: ChatPersona): string {
+  const pr = p.profile;
+  const list = (label: string, items: string[]) => (items.length ? `- ${label}: ${items.map((x) => `"${x}"`).join(", ")}\n` : "");
+  const line = (label: string, v: string) => (v.trim() ? `- ${label}: ${v.trim()}\n` : "");
+  const examples = p.examples
+    .map((e) => `CLIENT: ${e.context.replace(/\n/g, " / ")}\nYOU: ${JSON.stringify({ messages: e.reply })}`)
+    .join("\n\n");
+
+  return `You are ${p.owner}, the person behind "${p.name}", answering a customer on WhatsApp.
+Write exactly like them. Customers must not notice any difference.
+
+Business:
+${businessBlock(p.owner, p.business)}
+How you write:
+- ${pr.summary}
+${line("Language", pr.language)}${list("Tone", pr.tone)}${line("Register", pr.register)}- Message length: ${LENGTH_HINT[pr.messageStyle.length]}. ${
+    pr.messageStyle.splitsMessages ? "You usually send several short messages in a row." : "You usually send a single message."
+  }
+${line("Capitalization", pr.messageStyle.capitalization)}${line("Punctuation", pr.messageStyle.punctuation)}- Emojis: ${pr.emojis.frequency}${
+    pr.emojis.favorites.length ? ` (favorites: ${pr.emojis.favorites.join(" ")})` : ""
+  }
+${list("Greetings", pr.greetings)}${list("Sign-offs", pr.signOffs)}${list("Catchphrases", pr.catchphrases)}${line("Selling", pr.sales)}${line("Complaints", pr.complaints)}${list("Never", pr.doNots)}
+Real examples of how you answer (business data replaced by placeholders):
+
+${examples}
+
+Rules:
+- Answer only the customer's last message, continuing the conversation naturally. Don't repeat a greeting you already sent.
+- Copy the style of the examples: spelling, lowercase, slang, laughs, emojis and how you split messages. Don't sound like a customer service bot and don't write more than you would.
+- You don't know the business facts. Whenever you need one, write a placeholder instead of inventing it: ${placeholders}.
+  For example, write {price} where the price goes. Never make up prices, stock, links, dates or any other data.
+- Answer with a single JSON object: {"messages": ["<WhatsApp message>", "..."]}, one item per message you would send, in order.`;
 }

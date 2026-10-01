@@ -36,7 +36,7 @@ export function Dashboard({ user }: { user: string }) {
           {t.dashboard.question}
         </motion.p>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-2">
+        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <TiltCard
             href="/app/new"
             index="01"
@@ -56,6 +56,16 @@ export function Dashboard({ user }: { user: string }) {
             accent="rgba(139,92,246,0.28)"
           >
             <Crowd />
+          </TiltCard>
+          <TiltCard
+            href="/app/chat"
+            index="03"
+            title={t.dashboard.chatTitle}
+            body={t.dashboard.chatBody}
+            delay={base + 0.9}
+            accent="rgba(255,77,141,0.24)"
+          >
+            <Talk />
           </TiltCard>
         </div>
       </main>
@@ -161,6 +171,30 @@ function Crowd() {
         >
           <span className="flex h-full items-center justify-center font-mono text-sm text-ink/70">?</span>
         </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/** Un ida y vuelta de WhatsApp que se escribe solo. */
+function Talk() {
+  const bubbles = [
+    { side: "right", w: "w-24", d: 0 },
+    { side: "left", w: "w-36", d: 0.5 },
+    { side: "left", w: "w-20", d: 0.9 },
+  ] as const;
+  return (
+    <div className="flex w-56 flex-col gap-2">
+      {bubbles.map((b, i) => (
+        <motion.span
+          key={i}
+          className={`h-7 rounded-2xl ${b.w} ${
+            b.side === "right" ? "self-end rounded-br-md bg-white/20" : "self-start rounded-bl-md bg-acid"
+          }`}
+          style={{ originX: b.side === "left" ? 0 : 1 }}
+          animate={{ scale: [0.4, 1, 1, 0.4], opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 4, times: [0, 0.12, 0.85, 1], repeat: Infinity, delay: b.d, repeatDelay: 0.6 }}
+        />
       ))}
     </div>
   );

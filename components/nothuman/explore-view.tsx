@@ -90,9 +90,12 @@ function Detail({ nh }: { nh: NotHuman }) {
   return (
     <div className="mt-10">
       <div className="mb-10 flex flex-wrap gap-3">
-        <span className="rounded-full border border-white/10 px-4 py-2 font-mono text-xs text-white/40">
-          {dict.profile.chatSoon}
-        </span>
+        <Link
+          href={`/app/chat?nh=${nh.id}`}
+          className="rounded-full bg-acid px-5 py-2 text-sm font-medium text-ink shadow-[0_0_40px_-10px_rgba(198,255,61,0.6)] transition hover:scale-[1.03]"
+        >
+          {dict.chat.open}
+        </Link>
         <DownloadButton nh={nh} />
         <button
           onClick={() => {

@@ -161,7 +161,7 @@ function Running({ progress }: { progress: Progress }) {
 }
 
 function Born({ nh }: { nh: NotHuman }) {
-  const t = useI18n().t.generate;
+  const { generate: t, chat } = useI18n().t;
   return (
     <div>
       <motion.div
@@ -179,8 +179,14 @@ function Born({ nh }: { nh: NotHuman }) {
           >
             {t.download}
           </button>
-          <Link href={`/app/n/${nh.id}`} className="rounded-full bg-ink px-4 py-2 text-sm text-acid">
+          <Link
+            href={`/app/n/${nh.id}`}
+            className="rounded-full border border-ink/25 px-4 py-2 text-sm transition hover:bg-ink/10"
+          >
             {t.openProfile}
+          </Link>
+          <Link href={`/app/chat?nh=${nh.id}`} className="rounded-full bg-ink px-4 py-2 text-sm text-acid">
+            {chat.open}
           </Link>
         </div>
       </motion.div>

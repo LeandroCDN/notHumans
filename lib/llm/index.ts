@@ -3,21 +3,28 @@ import type { z } from "zod";
 import type { Usage } from "@/lib/nothuman/schema";
 import { deepseekJson } from "./deepseek";
 import { mockJson } from "./mock";
+import type { ModelOption } from "./models";
 
 // Interfaz mínima con el modelo. Hoy: DeepSeek (o un mock para desarrollo).
 // Sumar otro proveedor es escribir otra función con esta misma firma.
 
+export type ChatTurn = { role: "user" | "assistant"; content: string };
+
 export type JsonRequest<T> = {
   /** Para el mock: qué tarea es, así puede devolver algo con sentido. */
-  task: "extract" | "profile";
+  task: "extract" | "profile" | "chat";
   system: string;
+  /** Turnos anteriores (chat). Van entre el system y el último mensaje, así el prefijo se cachea. */
+  history?: ChatTurn[];
   user: string;
   schema: z.ZodType<T>;
   maxTokens?: number;
   temperature?: number;
+  /** Sin esto se usa el modelo por defecto (o DEEPSEEK_MODEL), sin modo thinking. */
+  model?: ModelOption;
 };
 
-export type JsonResponse<T> = { data: T; usage: Usage; model: string };
+export type JsonResponse<T> = { data: T; usage: Usage; model: string; reasoning?: string };
 
 export class MissingKeyError extends Error {
   constructor() {

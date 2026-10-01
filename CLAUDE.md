@@ -19,6 +19,8 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   datos concretos, para que la persona sea reutilizable. `findLeak` descarta ejemplos con datos sueltos.
 - Login con cuentas fijas desde `AUTH_USERS` (cookie firmada con HMAC). Sin sistema de usuarios.
 - Proveedor de IA: DeepSeek (el usuario no pudo pagar Anthropic). Interfaz en `lib/llm/` para sumar otros.
+  Modelos actuales: `deepseek-flash` y `deepseek-v4-pro`; el modo thinking viene prendido por defecto y lo apagamos
+  salvo que se elija una opción "thinking".
 - La generación la orquesta el navegador (un request corto por bloque) para no depender de colas.
 - Por ahora los notHumans se guardan en localStorage (`lib/nothuman/store.ts`). Supabase viene después.
 
@@ -26,5 +28,6 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 1. ✅ Home, login, panel, i18n EN/ES
 2. ✅ Parser de exports de WhatsApp (iOS/Android, es/en) + vista previa
 3. ✅ Generación con DeepSeek: ejemplos con marcadores + perfil; Explorar y detalle
-4. ⏭️ Chat de prueba con un notHuman (selector de notHuman y de modelo, tokens/caché/costo por mensaje)
+4. ✅ Test drive `/app/chat`: chat como cliente, selector de notHuman y de modelo, tokens/caché/costo por respuesta
+   (modelos y precios en `lib/llm/models.ts`; el notHuman espera ~1,3 s por si el cliente manda varios mensajes)
 5. ⏭️ Supabase para guardar y versionar notHumans
