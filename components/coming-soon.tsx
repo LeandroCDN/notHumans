@@ -2,10 +2,12 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import { useI18n } from "./i18n";
 
-type Props = { eyebrow: string; title: string; accent: string; body: string };
-
-export function ComingSoon({ eyebrow, title, accent, body }: Props) {
+/** Pantalla de "todavía no está" para las secciones que faltan. */
+export function ComingSoon({ section }: { section: "explore" }) {
+  const { t } = useI18n();
+  const { eyebrow, title, accent, body } = t[section];
   return (
     <main className="mx-auto flex min-h-[80dvh] max-w-4xl flex-col justify-center px-4 sm:px-10">
       <motion.div
@@ -14,7 +16,7 @@ export function ComingSoon({ eyebrow, title, accent, body }: Props) {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       >
         <Link href="/app" className="font-mono text-xs text-white/40 transition hover:text-acid">
-          ← volver
+          {t.common.back}
         </Link>
         <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-acid">{eyebrow}</p>
         <h1 className="mt-4 font-serif text-[clamp(2.8rem,8vw,6.5rem)] leading-[0.9] tracking-tight">
@@ -23,7 +25,7 @@ export function ComingSoon({ eyebrow, title, accent, body }: Props) {
         <p className="mt-6 max-w-xl text-lg text-white/55">{body}</p>
         <p className="mt-10 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 font-mono text-xs text-white/40">
           <span className="size-1.5 animate-pulse rounded-full bg-rose" />
-          en construcción · el próximo commit le da vida
+          {t.common.soon}
         </p>
       </motion.div>
     </main>

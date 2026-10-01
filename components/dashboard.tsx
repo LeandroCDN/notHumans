@@ -3,10 +3,12 @@
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "motion/react";
 import Link from "next/link";
 import { Curtain, useArrivedFromLogin } from "./curtain";
+import { useI18n } from "./i18n";
 import { ScrambleText } from "./scramble-text";
 
 export function Dashboard({ user }: { user: string }) {
   const arrived = useArrivedFromLogin();
+  const { t } = useI18n();
   // Si venimos del login, esperamos a que el telón se abra antes de mostrar todo.
   const base = arrived ? 0.6 : 0;
 
@@ -20,10 +22,10 @@ export function Dashboard({ user }: { user: string }) {
           transition={{ delay: base + 0.1 }}
           className="font-mono text-xs uppercase tracking-[0.2em] text-white/40"
         >
-          humanidad verificada ✓
+          {t.dashboard.verified}
         </motion.p>
         <h1 className="mt-4 font-serif text-[clamp(3rem,8vw,7rem)] leading-[0.9] tracking-tight">
-          <ScrambleText text={`Hola, ${user}.`} delay={base * 1000 + 50} duration={900} />
+          <ScrambleText text={t.dashboard.hello(user)} delay={base * 1000 + 50} duration={900} />
         </h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -31,15 +33,15 @@ export function Dashboard({ user }: { user: string }) {
           transition={{ delay: base + 0.45, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="mt-4 text-xl text-white/55"
         >
-          ¿Qué hacemos hoy? ¿Le damos vida a alguien nuevo o charlamos con los que ya existen?
+          {t.dashboard.question}
         </motion.p>
 
         <div className="mt-14 grid gap-6 md:grid-cols-2">
           <TiltCard
             href="/app/new"
             index="01"
-            title="Crear un notHuman"
-            body="Subí chats, contanos del negocio. Nosotros le damos voz."
+            title={t.dashboard.createTitle}
+            body={t.dashboard.createBody}
             delay={base + 0.6}
             accent="rgba(198,255,61,0.22)"
           >
@@ -48,8 +50,8 @@ export function Dashboard({ user }: { user: string }) {
           <TiltCard
             href="/app/explore"
             index="02"
-            title="Explorar notHumans"
-            body="Elegí uno y hablale. A ver si te das cuenta."
+            title={t.dashboard.exploreTitle}
+            body={t.dashboard.exploreBody}
             delay={base + 0.75}
             accent="rgba(139,92,246,0.28)"
           >

@@ -2,11 +2,11 @@
 
 import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
-
-const fmt = new Intl.NumberFormat("es-AR");
+import { useI18n } from "../i18n";
 
 export function CountUp({ value, decimals = 0 }: { value: number; decimals?: number }) {
   const reduced = useReducedMotion();
+  const fmt = new Intl.NumberFormat(useI18n().t.intl);
   const [shown, setShown] = useState(0);
 
   useEffect(() => {

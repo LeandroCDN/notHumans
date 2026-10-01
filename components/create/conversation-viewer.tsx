@@ -2,12 +2,20 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import type { Conversation } from "@/lib/whatsapp/analyze";
-
-const when = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+import { type Conversation, MEDIA_PLACEHOLDER } from "@/lib/whatsapp/analyze";
+import { useI18n } from "../i18n";
 
 /** Lista de conversaciones a la izquierda, la charla elegida a la derecha, tal como la va a ver el modelo. */
 export function ConversationViewer({ conversations }: { conversations: Conversation[] }) {
+  const { t: dict } = useI18n();
+  const t = dict.create.viewer;
+  const when = new Intl.DateTimeFormat(dict.intl, {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = conversations.find((c) => c.id === selectedId) ?? conversations[0];
   if (!selected) return null;
@@ -34,7 +42,7 @@ export function ConversationViewer({ conversations }: { conversations: Conversat
                 )}
                 <span className="relative block truncate font-medium">{c.client}</span>
                 <span className="relative block font-mono text-[11px] text-white/40">
-                  {when.format(c.start)} · {c.turns.length} turnos
+                  {when.format(c.start)} · {c.turns.length} {t.turns}
                 </span>
               </button>
             </li>
@@ -63,16 +71,16 @@ export function ConversationViewer({ conversations }: { conversations: Conversat
                   className={`flex max-w-[85%] flex-col gap-1 ${mine ? "items-end self-end" : "items-start self-start"}`}
                 >
                   <span className="px-1 font-mono text-[10px] uppercase tracking-wider text-white/30">
-                    {mine ? "vos" : turn.author}
+                    {mine ? t.you : turn.author}
                   </span>
-                  {turn.texts.map((t, j) => (
+                  {turn.texts.map((text, j) => (
                     <span
                       key={j}
                       className={`whitespace-pre-wrap rounded-2xl px-4 py-2 text-[15px] leading-snug ${
                         mine ? "bg-acid text-ink" : "bg-white/[0.07]"
-                      } ${t.startsWith("📎") ? "italic opacity-60" : ""}`}
+                      } ${text === MEDIA_PLACEHOLDER ? "italic opacity-60" : ""}`}
                     >
-                      {t}
+                      {text === MEDIA_PLACEHOLDER ? dict.create.media : text}
                     </span>
                   ))}
                 </motion.div>

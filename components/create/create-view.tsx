@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { buildConversations, detectOwner, summarize, usableChats } from "@/lib/whatsapp/analyze";
 import { type ChatFile, readChatFiles } from "@/lib/whatsapp/files";
 import { parseExport } from "@/lib/whatsapp/parse";
-import { SAMPLE_CHATS } from "@/lib/whatsapp/sample";
+import { SAMPLE_CHATS, SAMPLE_CHATS_EN } from "@/lib/whatsapp/sample";
+import { useI18n } from "../i18n";
 import { FileList, type FileEntry, OwnerPicker, Personality, Stats } from "./analysis";
 import { BusinessForm, EMPTY_BUSINESS } from "./business-form";
 import { ConversationViewer } from "./conversation-viewer";
@@ -20,6 +21,8 @@ const reveal = {
 };
 
 export function CreateView() {
+  const { locale, t: dict } = useI18n();
+  const t = dict.create;
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [pickedOwner, setPickedOwner] = useState<string | null>(null);
   const [business, setBusiness] = useState(EMPTY_BUSINESS);
@@ -52,7 +55,7 @@ export function CreateView() {
       } catch {
         setEntries((prev) => [
           ...prev,
-          { key: `${file.name}:error:${Date.now()}`, error: "No pudimos abrir este archivo", fileName: file.name },
+          { key: `${file.name}:error:${Date.now()}`, error: t.openError, fileName: file.name },
         ]);
       }
     }
@@ -62,19 +65,16 @@ export function CreateView() {
     <main className="mx-auto max-w-5xl px-4 pb-32 pt-6 sm:px-10">
       <motion.div {...reveal}>
         <Link href="/app" className="font-mono text-xs text-white/40 transition hover:text-acid">
-          ← volver
+          {dict.common.back}
         </Link>
-        <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-acid">01 · crear</p>
+        <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-acid">{t.eyebrow}</p>
         <h1 className="mt-4 font-serif text-[clamp(2.8rem,8vw,6rem)] leading-[0.9] tracking-tight">
-          Dale vida a un <em className="text-acid">notHuman.</em>
+          {t.titleA} <em className="text-acid">{t.titleB}</em>
         </h1>
-        <p className="mt-5 max-w-2xl text-lg text-white/55">
-          Empezá por los chats: de ahí sale cómo habla. Por ahora todo se procesa en tu navegador y no se sube a
-          ningún lado.
-        </p>
+        <p className="mt-5 max-w-2xl text-lg text-white/55">{t.intro}</p>
       </motion.div>
 
-      <Section n="1" title="Los chats">
+      <Section n="1" title={t.sections.chats}>
         <div className="space-y-4">
           <Dropzone onFiles={onFiles} compact={entries.length > 0} />
           {entries.length > 0 ? (
@@ -86,10 +86,10 @@ export function CreateView() {
           ) : (
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <button
-                onClick={() => addChatFiles(SAMPLE_CHATS)}
+                onClick={() => addChatFiles(locale === "es" ? SAMPLE_CHATS : SAMPLE_CHATS_EN)}
                 className="font-mono text-sm text-acid underline decoration-acid/30 underline-offset-4 transition hover:decoration-acid"
               >
-                probar con chats de ejemplo →
+                {t.trySample}
               </button>
               <HowToExport />
             </div>
@@ -100,7 +100,7 @@ export function CreateView() {
       <AnimatePresence>
         {hasUsable && (
           <motion.div key="analysis" {...reveal}>
-            <Section n="2" title="Lo que entendimos">
+            <Section n="2" title={t.sections.understood}>
               <div className="space-y-8">
                 <OwnerPicker guess={guess} owner={owner} onChange={setPickedOwner} />
                 {!owner ? null : conversations.length > 0 ? (
@@ -109,20 +109,18 @@ export function CreateView() {
                     <Personality summary={summary} owner={owner} />
                   </>
                 ) : (
-                  <p className="text-white/50">
-                    No encontramos charlas donde un cliente pregunte y {owner} responda. ¿Elegiste bien tu nombre?
-                  </p>
+                  <p className="text-white/50">{t.noPairs(owner)}</p>
                 )}
               </div>
             </Section>
 
             {owner && conversations.length > 0 && (
-              <Section n="3" title="Las conversaciones" sub="Así van a llegarle al modelo: agrupadas en turnos, sin multimedia.">
+              <Section n="3" title={t.sections.conversations} sub={t.sections.conversationsSub}>
                 <ConversationViewer conversations={conversations} />
               </Section>
             )}
 
-            <Section n="4" title="El negocio" sub="Le ayuda al modelo a entender los chats: qué es un producto, qué es un precio.">
+            <Section n="4" title={t.sections.business} sub={t.sections.businessSub}>
               <BusinessForm value={business} onChange={setBusiness} />
             </Section>
 
@@ -131,11 +129,9 @@ export function CreateView() {
                 disabled
                 className="cursor-not-allowed rounded-full bg-acid/30 px-8 py-4 text-lg font-medium text-ink/60"
               >
-                Generar notHuman →
+                {t.generate}
               </button>
-              <p className="font-mono text-xs text-white/40">
-                La generación con IA llega en el paso 3. Por ahora, revisá que los chats se lean bien.
-              </p>
+              <p className="font-mono text-xs text-white/40">{t.generateSoon}</p>
             </motion.div>
           </motion.div>
         )}
@@ -166,6 +162,7 @@ function Section({ n, title, sub, children }: { n: string; title: string; sub?: 
 }
 
 function HowToExport() {
+  const t = useI18n().t.create;
   const [open, setOpen] = useState(false);
   return (
     <div className="w-full sm:w-auto">
@@ -174,7 +171,7 @@ function HowToExport() {
         className="font-mono text-sm text-white/50 transition hover:text-bone"
         aria-expanded={open}
       >
-        ¿cómo exporto un chat? {open ? "−" : "+"}
+        {t.howTo} {open ? "−" : "+"}
       </button>
       <AnimatePresence>
         {open && (
@@ -187,11 +184,11 @@ function HowToExport() {
             <div className="mt-4 grid gap-4 text-sm text-white/60 sm:grid-cols-2">
               <div className="rounded-2xl border border-white/10 p-4">
                 <p className="font-mono text-[11px] uppercase tracking-wider text-acid">iPhone</p>
-                <p className="mt-2">Abrí el chat → tocá el nombre arriba → Exportar chat → Sin archivos. Te queda un .zip.</p>
+                <p className="mt-2">{t.howToIos}</p>
               </div>
               <div className="rounded-2xl border border-white/10 p-4">
                 <p className="font-mono text-[11px] uppercase tracking-wider text-acid">Android</p>
-                <p className="mt-2">Abrí el chat → ⋮ → Más → Exportar chat → Sin archivos. Te queda un .txt.</p>
+                <p className="mt-2">{t.howToAndroid}</p>
               </div>
             </div>
           </motion.div>

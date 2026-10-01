@@ -3,17 +3,17 @@
 import { AnimatePresence, motion } from "motion/react";
 import type { OwnerGuess, Summary } from "@/lib/whatsapp/analyze";
 import type { ParsedChat } from "@/lib/whatsapp/parse";
+import type { Dict } from "@/lib/i18n/dictionaries";
+import { useI18n } from "../i18n";
 import { CountUp } from "./count-up";
-
-const day = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" });
 
 export type FileEntry = { key: string; chat: ParsedChat } | { key: string; error: string; fileName: string };
 
-function warningFor(chat: ParsedChat, owner: string | null): string | null {
-  if (!chat.format) return "No parece un export de WhatsApp";
-  if (chat.isGroup) return "Es un grupo: lo salteamos";
-  if (chat.participants.length < 2) return "Tiene un solo participante";
-  if (owner && !chat.participants.some((p) => p.name === owner)) return `No aparece ${owner} en este chat`;
+function warningFor(chat: ParsedChat, owner: string | null, t: Dict["create"]["files"]): string | null {
+  if (!chat.format) return t.notWhatsapp;
+  if (chat.isGroup) return t.group;
+  if (chat.participants.length < 2) return t.single;
+  if (owner && !chat.participants.some((p) => p.name === owner)) return t.ownerMissing(owner);
   return null;
 }
 
@@ -26,12 +26,13 @@ export function FileList({
   owner: string | null;
   onRemove: (key: string) => void;
 }) {
+  const t = useI18n().t.create.files;
   return (
     <ul className="space-y-2">
       <AnimatePresence initial={false}>
         {entries.map((entry) => {
           const chat = "chat" in entry ? entry.chat : null;
-          const warning = "chat" in entry ? warningFor(entry.chat, owner) : entry.error;
+          const warning = "chat" in entry ? warningFor(entry.chat, owner, t) : entry.error;
           const name = "chat" in entry ? entry.chat.fileName : entry.fileName;
           const text = chat?.messages.filter((m) => m.kind === "text").length ?? 0;
           const dropped = chat ? chat.messages.length - text : 0;
@@ -56,14 +57,14 @@ export function FileList({
               )}
               {chat?.format && !warning && (
                 <span className="font-mono text-xs text-white/40">
-                  {text} mensajes{dropped > 0 && ` · ${dropped} descartados`}
+                  {t.messages(text, dropped)}
                 </span>
               )}
               {warning && <span className="font-mono text-xs text-rose">{warning}</span>}
               <button
                 onClick={() => onRemove(entry.key)}
                 className="ml-auto font-mono text-xs text-white/30 transition hover:text-rose sm:ml-0"
-                aria-label={`Quitar ${name}`}
+                aria-label={t.remove(name)}
               >
                 ✕
               </button>
@@ -88,26 +89,26 @@ export function OwnerPicker({
   owner: string | null;
   onChange: (name: string) => void;
 }) {
+  const t = useI18n().t.create.owner;
   const userPicked = owner !== guess.owner;
-  const why =
-    guess.reason === "all-files" ? "aparecés en todos los chats." : "lo sacamos del nombre de los archivos.";
+  const why = guess.reason === "all-files" ? t.becauseAll : t.becauseFile;
   return (
     <div>
       <p className="text-lg">
         {owner && guess.confident && !userPicked ? (
           <>
-            Sos <span className="font-serif text-2xl italic text-acid">{owner}</span>: {why}
+            {t.youAre} <span className="font-serif text-2xl italic text-acid">{owner}</span>: {why}
           </>
         ) : owner && userPicked ? (
           <>
-            Sos <span className="font-serif text-2xl italic text-acid">{owner}</span>.
+            {t.youAre} <span className="font-serif text-2xl italic text-acid">{owner}</span>.
           </>
         ) : (
-          <>¿Quién sos vos en estos chats?</>
+          <>{t.who}</>
         )}
       </p>
       <p className="mt-1 text-sm text-white/40">
-        {owner ? "Si no es así, elegí otro nombre." : "No hay forma de saberlo con certeza: tocá tu nombre."}
+        {owner ? t.notYou : t.pick}
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {guess.candidates.slice(0, 8).map((c) => {
@@ -143,18 +144,21 @@ export function OwnerPicker({
 }
 
 export function Stats({ summary }: { summary: Summary }) {
+  const { t: dict } = useI18n();
+  const t = dict.create.stats;
+  const day = new Intl.DateTimeFormat(dict.intl, { day: "numeric", month: "short", year: "numeric" });
   const items = [
-    { label: "conversaciones", value: summary.conversations },
-    { label: "turnos", value: summary.turns },
-    { label: "ejemplos posibles", value: summary.pairs, hint: "pregunta del cliente + tu respuesta" },
-    { label: "mensajes tuyos", value: summary.ownerMessages },
+    { label: t.conversations, value: summary.conversations },
+    { label: t.turns, value: summary.turns },
+    { label: t.pairs, value: summary.pairs, hint: t.pairsHint },
+    { label: t.ownerMessages, value: summary.ownerMessages },
   ];
   return (
     <div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {items.map((it, i) => (
           <motion.div
-            key={it.label}
+            key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
@@ -170,7 +174,7 @@ export function Stats({ summary }: { summary: Summary }) {
       </div>
       {summary.range && (
         <p className="mt-3 font-mono text-xs text-white/35">
-          del {day.format(summary.range.from)} al {day.format(summary.range.to)}
+          {t.range(day.format(summary.range.from), day.format(summary.range.to))}
         </p>
       )}
     </div>
@@ -179,14 +183,16 @@ export function Stats({ summary }: { summary: Summary }) {
 
 /** Un adelanto de la personalidad, sin IA: emojis, largo, saludos, horario y risas. */
 export function Personality({ summary, owner }: { summary: Summary; owner: string }) {
+  const t = useI18n().t.create.personality;
+  const peak = summary.peakHour ?? 0;
   const facts = [
     summary.avgWords > 0 && {
-      label: "palabras por mensaje",
+      label: t.words,
       value: <CountUp value={summary.avgWords} decimals={1} />,
-      note: summary.avgWords < 8 ? "va al grano" : summary.avgWords < 16 ? "ni mucho ni poco" : "le gusta explayarse",
+      note: t.wordsNotes[summary.avgWords < 8 ? 0 : summary.avgWords < 16 ? 1 : 2],
     },
     summary.topOpeners.length > 0 && {
-      label: "arranca con",
+      label: t.opener,
       value: <span className="capitalize">{summary.topOpeners[0].word}</span>,
       note: summary.topOpeners
         .slice(1)
@@ -194,35 +200,26 @@ export function Personality({ summary, owner }: { summary: Summary; owner: strin
         .join(", "),
     },
     summary.peakHour !== null && {
-      label: "hora pico",
-      value: `${summary.peakHour}h`,
-      note:
-        summary.peakHour < 6
-          ? "trasnochador/a"
-          : summary.peakHour < 10
-            ? "madrugador/a"
-            : summary.peakHour < 13
-              ? "de mañana"
-              : summary.peakHour < 20
-                ? "de tarde"
-                : "nocturno/a",
+      label: t.peak,
+      value: `${peak}h`,
+      note: t.peakNotes[peak < 6 ? 0 : peak < 10 ? 1 : peak < 13 ? 2 : peak < 20 ? 3 : 4],
     },
     {
-      label: "se ríe en",
+      label: t.laughs,
       value: (
         <>
           <CountUp value={summary.laughRate} />%
         </>
       ),
-      note: "de sus mensajes",
+      note: t.laughsNote,
     },
   ].filter(Boolean) as { label: string; value: React.ReactNode; note: string }[];
 
   return (
     <div className="relative overflow-hidden rounded-[32px] border border-acid/20 bg-gradient-to-br from-acid/[0.07] via-transparent to-violet/[0.08] p-6 sm:p-8">
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-acid">primer vistazo · sin IA todavía</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-acid">{t.eyebrow}</p>
       <h3 className="mt-3 font-serif text-3xl sm:text-4xl">
-        Así escribe <em>{owner}</em>
+        {t.title} <em>{owner}</em> {t.titleEnd}
       </h3>
 
       {summary.topEmojis.length > 0 && (

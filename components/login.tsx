@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useAnimate } from "motion/react";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { markArrivalFromLogin } from "./curtain";
+import { useI18n } from "./i18n";
 import { ScrambleText } from "./scramble-text";
 
 type Origin = { x: number; y: number };
@@ -60,17 +61,11 @@ export function LoginProvider({ loggedIn, children }: { loggedIn: boolean; child
   );
 }
 
-const ERRORS = [
-  "Mmm… eso es algo que diría un bot.",
-  "Nop. ¿Seguro que sos humano?",
-  "Contraseña incorrecta. Sospechoso.",
-  "Un humano ya se la habría acordado.",
-];
-
 type Phase = "idle" | "loading" | "error" | "granted";
 
 function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorIdx, setErrorIdx] = useState(0);
   const [configError, setConfigError] = useState<string | null>(null);
@@ -106,17 +101,17 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
 
     if (!res?.ok) {
       setPhase("error");
-      setErrorIdx((i) => (i + 1) % ERRORS.length);
+      setErrorIdx((i) => (i + 1) % t.login.errors.length);
       // Credenciales malas → chiste. Servidor mal configurado → decirlo claro.
       const data = res && res.status !== 401 ? ((await res.json().catch(() => null)) as { missing?: string[] } | null) : null;
       setConfigError(
         !res
-          ? "No hay conexión con el servidor."
+          ? t.login.noConnection
           : res.status === 401
             ? null
             : data?.missing?.length
-              ? `Falta configurar ${data.missing.join(" y ")} en el servidor.`
-              : `Error del servidor (${res.status}).`,
+              ? t.login.missingConfig(data.missing)
+              : t.login.serverError(res.status),
       );
       animate(scope.current, { x: [0, -14, 12, -9, 7, -4, 0] }, { duration: 0.45 });
       return;
@@ -157,26 +152,26 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
             type="button"
             onClick={onClose}
             className="absolute right-5 top-5 font-mono text-xs text-white/40 transition hover:text-white"
-            aria-label="Cerrar"
+            aria-label={t.login.close}
           >
             esc ✕
           </button>
 
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-acid">● control de humanidad</p>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-acid">{t.login.eyebrow}</p>
           <h2 className="mt-4 font-serif text-4xl leading-none">
             {phase === "granted" ? (
-              <ScrambleText text="Acceso concedido." duration={600} />
+              <ScrambleText text={t.login.granted} duration={600} />
             ) : (
               <>
-                Demostrá que <em>sos humano.</em>
+                {t.login.titleA} <em>{t.login.titleB}</em>
               </>
             )}
           </h2>
-          <p className="mt-3 text-sm text-white/50">Acá adentro, los únicos humanos son los que tienen contraseña.</p>
+          <p className="mt-3 text-sm text-white/50">{t.login.subtitle}</p>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
-            <Field label="ID" name="user" autoComplete="username" autoFocus />
-            <Field label="Contraseña" name="password" type="password" autoComplete="current-password" />
+            <Field label={t.login.user} name="user" autoComplete="username" autoFocus />
+            <Field label={t.login.password} name="password" type="password" autoComplete="current-password" />
 
             <div className="h-5">
               <AnimatePresence mode="wait">
@@ -188,7 +183,7 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
                     exit={{ opacity: 0, y: -6 }}
                     className="font-mono text-xs text-rose"
                   >
-                    {configError ?? ERRORS[errorIdx]}
+                    {configError ?? t.login.errors[errorIdx]}
                   </motion.p>
                 )}
               </AnimatePresence>
@@ -213,10 +208,10 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
                   {phase === "loading" ? (
                     <Dots />
                   ) : phase === "granted" ? (
-                    "✓ Sos humano"
+                    t.login.success
                   ) : (
                     <>
-                      Entrar <span className="transition-transform group-hover:translate-x-1">→</span>
+                      {t.login.submit} <span className="transition-transform group-hover:translate-x-1">→</span>
                     </>
                   )}
                 </motion.span>

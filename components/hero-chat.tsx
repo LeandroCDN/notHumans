@@ -2,49 +2,18 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import type { DemoScript } from "@/lib/i18n/dictionaries";
+import { useI18n } from "./i18n";
 import { Dots } from "./login";
 
-type Line = { from: "client" | "nh"; text: string };
-type Script = { persona: string; hue: string; lines: Line[] };
-
-const SCRIPTS: Script[] = [
-  {
-    persona: "Martina",
-    hue: "from-acid to-emerald-400",
-    lines: [
-      { from: "client", text: "hola! tenés la campera negra en M?" },
-      { from: "nh", text: "Holaaa 🙌 sí, me queda una sola en M" },
-      { from: "nh", text: "¿Te la separo hasta mañana?" },
-      { from: "client", text: "dale!! cuánto sale?" },
-      { from: "nh", text: "$48.000, y si pagás por transferencia te hago 10% off 😉" },
-    ],
-  },
-  {
-    persona: "El Tano",
-    hue: "from-violet to-rose",
-    lines: [
-      { from: "client", text: "buenas, hacen envíos a Rosario?" },
-      { from: "nh", text: "Buenas! Sí, llega en 48hs por Andreani 📦" },
-      { from: "client", text: "y si no me queda bien?" },
-      { from: "nh", text: "Tranqui, tenés 30 días para cambiarlo. Sin vueltas, eh" },
-    ],
-  },
-  {
-    persona: "Jess",
-    hue: "from-rose to-amber-300",
-    lines: [
-      { from: "client", text: "hey, is this still available?" },
-      { from: "nh", text: "Hey! Yes it is 🙌" },
-      { from: "nh", text: "Want me to hold it for you till tomorrow?" },
-      { from: "client", text: "omg yes please" },
-    ],
-  },
-];
+type Line = DemoScript["lines"][number];
 
 type Shown = Line & { id: number };
 
 /** Un chat de WhatsApp que se escribe solo. Al final, la revelación. */
 export function HeroChat() {
+  const { t } = useI18n();
+  const scripts = t.heroChat.scripts;
   const [scriptIdx, setScriptIdx] = useState(0);
   const [messages, setMessages] = useState<Shown[]>([]);
   const [typing, setTyping] = useState(false);
@@ -57,8 +26,8 @@ export function HeroChat() {
 
     (async () => {
       for (let s = 0; !cancelled; s++) {
-        const script = SCRIPTS[s % SCRIPTS.length];
-        setScriptIdx(s % SCRIPTS.length);
+        const script = scripts[s % scripts.length];
+        setScriptIdx(s % scripts.length);
         setMessages([]);
         setReveal(false);
         await sleep(700);
@@ -85,9 +54,9 @@ export function HeroChat() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [scripts]);
 
-  const script = SCRIPTS[scriptIdx];
+  const script = scripts[scriptIdx] ?? scripts[0];
 
   return (
     <div className="relative mx-auto w-full max-w-[400px]">
@@ -114,7 +83,7 @@ export function HeroChat() {
               </motion.p>
             </AnimatePresence>
             <p className="font-mono text-[11px] text-white/40">
-              {typing ? <span className="text-acid">escribiendo…</span> : "en línea"}
+              {typing ? <span className="text-acid">{t.heroChat.typing}</span> : t.heroChat.online}
             </p>
           </div>
           <span className="rounded-full border border-white/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-white/40">
@@ -166,7 +135,7 @@ export function HeroChat() {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 flex items-center justify-center gap-2 px-4 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-acid"
               >
-                ✦ {script.persona} no existe. Es un notHuman.
+                {t.heroChat.reveal(script.persona)}
               </motion.p>
             ) : (
               <motion.p
@@ -176,7 +145,7 @@ export function HeroChat() {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 flex items-center px-5 text-sm text-white/25"
               >
-                Escribí un mensaje…
+                {t.heroChat.placeholder}
               </motion.p>
             )}
           </AnimatePresence>

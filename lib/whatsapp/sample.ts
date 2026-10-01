@@ -1,7 +1,7 @@
 import type { ChatFile } from "./files";
 
-// Dos exports inventados (uno de Android y otro de iOS) para probar el flujo sin chats reales.
-// La dueña es "Martina", que vende ropa por WhatsApp.
+// Exports inventados (uno de Android y otro de iOS por idioma) para probar el flujo sin chats reales.
+// En español la dueña es "Martina"; en inglés, "Emma". Las dos venden ropa por WhatsApp.
 
 const ANDROID = `03/02/24 10:12 - Los mensajes y las llamadas están cifrados de extremo a extremo. Nadie fuera de este chat, ni siquiera WhatsApp, puede leerlos ni escucharlos.
 03/02/24 10:12 - Sofi: Hola! vi la campera negra en el estado
@@ -45,4 +45,38 @@ const IOS = `[14/03/24, 9:05:10] Lucas: Buenas, hacen envíos a Rosario?
 export const SAMPLE_CHATS: ChatFile[] = [
   { name: "Chat de WhatsApp con Sofi.txt", text: ANDROID },
   { name: "WhatsApp Chat - Lucas.zip", text: IOS },
+];
+
+const NNBSP = "\u202f";
+
+const ANDROID_EN = `2/3/24, 10:12${NNBSP}AM - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.
+2/3/24, 10:12${NNBSP}AM - Olivia: Hi! saw the black jacket on your story
+2/3/24, 10:12${NNBSP}AM - Olivia: do you have it in M?
+2/3/24, 10:15${NNBSP}AM - Emma: Hiii Olivia 🙌
+2/3/24, 10:15${NNBSP}AM - Emma: Yes! I've got one left in M
+2/3/24, 10:16${NNBSP}AM - Emma: Want me to hold it for you till tomorrow?
+2/3/24, 10:18${NNBSP}AM - Olivia: yes please!! how much?
+2/3/24, 10:19${NNBSP}AM - Emma: $48, and 10% off if you pay by bank transfer 😉
+2/3/24, 10:21${NNBSP}AM - Olivia: perfect, I'll send it this afternoon
+2/3/24, 10:22${NNBSP}AM - Emma: Amazing, any questions just text me 💛
+2/5/24, 6:40${NNBSP}PM - Olivia: hiii it arrived, love it
+2/5/24, 6:40${NNBSP}PM - Olivia: <Media omitted>
+2/5/24, 6:52${NNBSP}PM - Emma: Omg it looks so good on you!! 😍
+2/5/24, 6:52${NNBSP}PM - Emma: Thanks for the pic, you made my day haha`;
+
+const IOS_EN = `[3/14/24, 9:05:10${NNBSP}AM] Ben: Hey, do you ship to Austin?
+[3/14/24, 9:20:44${NNBSP}AM] Emma: Hey Ben! Yep, it gets there in 2 days 📦
+[3/14/24, 9:21:02${NNBSP}AM] Emma: Shipping is $5, or free over $60
+[3/14/24, 9:25:13${NNBSP}AM] Ben: and if it doesn't fit?
+[3/14/24, 9:26:40${NNBSP}AM] Emma: No worries, you've got 30 days to swap it. No questions asked 😉
+[3/14/24, 9:27:01${NNBSP}AM] Ben: great, I want the grey hoodie in L
+[3/14/24, 9:28:15${NNBSP}AM] Emma: Ugh, the grey one in L is sold out 😕
+[3/14/24, 9:28:30${NNBSP}AM] Emma: But I have it in olive green and it's so nice
+[3/14/24, 9:28:31${NNBSP}AM] Emma: \u200eimage omitted
+[3/14/24, 9:31:50${NNBSP}AM] Ben: ooh I like it, let's do that one
+[3/14/24, 9:32:05${NNBSP}AM] Emma: Awesome!! Sending you the payment link 🙌`;
+
+export const SAMPLE_CHATS_EN: ChatFile[] = [
+  { name: "WhatsApp Chat with Olivia.txt", text: ANDROID_EN },
+  { name: "WhatsApp Chat - Ben.zip", text: IOS_EN },
 ];

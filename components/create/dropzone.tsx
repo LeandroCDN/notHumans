@@ -2,11 +2,13 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
+import { useI18n } from "../i18n";
 
 type Props = { onFiles: (files: File[]) => void; compact?: boolean };
 
 /** Zona para soltar los exports. Acepta .txt y .zip, varios a la vez. */
 export function Dropzone({ onFiles, compact = false }: Props) {
+  const t = useI18n().t.create.dropzone;
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const depth = useRef(0);
@@ -65,7 +67,7 @@ export function Dropzone({ onFiles, compact = false }: Props) {
           <span className="flex size-9 items-center justify-center rounded-full border border-white/15 font-mono text-lg transition group-hover:border-acid group-hover:text-acid">
             +
           </span>
-          {over ? "¡Soltalos!" : "Sumar más chats"}
+          {over ? t.drop : t.more}
         </p>
       ) : (
         <div className="relative flex flex-col items-center text-center">
@@ -79,13 +81,10 @@ export function Dropzone({ onFiles, compact = false }: Props) {
               transition={{ duration: 0.18 }}
               className="mt-8 font-serif text-4xl sm:text-5xl"
             >
-              {over ? "¡Soltalos!" : "Soltá acá tus chats"}
+              {over ? t.drop : t.title}
             </motion.p>
           </AnimatePresence>
-          <p className="mt-3 text-white/50">
-            o hacé click para elegirlos · <span className="font-mono text-sm">.txt</span> o{" "}
-            <span className="font-mono text-sm">.zip</span>, todos los que quieras
-          </p>
+          <p className="mt-3 text-white/50">{t.hint}</p>
         </div>
       )}
     </motion.button>

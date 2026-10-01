@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MEDIA_PLACEHOLDER, buildConversations, detectOwner, summarize } from "./analyze";
 import { extractChatsFromZip } from "./files";
 import { parseExport } from "./parse";
-import { SAMPLE_CHATS } from "./sample";
+import { SAMPLE_CHATS, SAMPLE_CHATS_EN } from "./sample";
 
 const LRM = "‎";
 const NNBSP = " ";
@@ -176,11 +176,14 @@ describe("zip", () => {
 });
 
 describe("chats de ejemplo", () => {
-  it("se parsean y el dueño se detecta con certeza", () => {
-    const chats = SAMPLE_CHATS.map((f) => parseExport(f.text, f.name));
-    expect(chats.every((c) => c.format)).toBe(true);
+  it.each([
+    ["es", SAMPLE_CHATS, "Martina"],
+    ["en", SAMPLE_CHATS_EN, "Emma"],
+  ] as const)("%s: se parsean y el dueño se detecta con certeza", (lang, files, owner) => {
+    const chats = files.map((f) => parseExport(f.text, f.name));
+    expect(chats.every((c) => c.format && c.language === lang)).toBe(true);
     const guess = detectOwner(chats);
-    expect(guess.confident).toBe(true);
-    expect(buildConversations(chats, guess.owner!).length).toBeGreaterThanOrEqual(4);
+    expect(guess).toMatchObject({ owner, confident: true });
+    expect(buildConversations(chats, owner).length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -4,6 +4,8 @@ import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 import { Backdrop } from "./backdrop";
 import { HeroChat } from "./hero-chat";
+import { useI18n } from "./i18n";
+import { LanguageSwitch } from "./language-switch";
 import { LoginProvider, useLogin } from "./login";
 import { Logo } from "./logo";
 import { Magnetic } from "./magnetic";
@@ -20,6 +22,7 @@ const rise = {
 };
 
 export function HomeView({ loggedIn }: { loggedIn: boolean }) {
+  const { t } = useI18n();
   return (
     <LoginProvider loggedIn={loggedIn}>
       <Backdrop />
@@ -31,7 +34,7 @@ export function HomeView({ loggedIn }: { loggedIn: boolean }) {
       </main>
       <footer className="flex flex-col items-center justify-between gap-2 px-6 py-10 font-mono text-[11px] text-white/30 sm:flex-row sm:px-10">
         <span>notHumans © 2026</span>
-        <span>hecho por humanos (por ahora)</span>
+        <span>{t.home.footer}</span>
       </footer>
     </LoginProvider>
   );
@@ -39,6 +42,7 @@ export function HomeView({ loggedIn }: { loggedIn: boolean }) {
 
 function Nav() {
   const { request } = useLogin();
+  const { t } = useI18n();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 40));
@@ -53,16 +57,17 @@ function Nav() {
       }`}
     >
       <Logo className="text-2xl" />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <span className="hidden font-mono text-[11px] text-white/30 md:inline">
-          apretá <kbd className="rounded border border-white/15 px-1.5 py-0.5 text-white/60">L</kbd>
+          {t.home.press} <kbd className="rounded border border-white/15 px-1.5 py-0.5 text-white/60">L</kbd>
         </span>
+        <LanguageSwitch />
         <Magnetic>
           <button
             onClick={(e) => request(e)}
             className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm backdrop-blur-md transition hover:border-acid hover:bg-acid hover:text-ink"
           >
-            Entrar
+            {t.home.login}
           </button>
         </Magnetic>
       </div>
@@ -72,6 +77,7 @@ function Nav() {
 
 function Hero() {
   const { request } = useLogin();
+  const { t } = useI18n();
   return (
     <section className="mx-auto grid min-h-[100dvh] max-w-7xl items-center gap-14 px-4 pb-16 pt-28 sm:px-10 lg:grid-cols-[1.15fr_0.85fr]">
       <div>
@@ -88,10 +94,10 @@ function Hero() {
 
         <h1 className="mt-7 text-[clamp(3.2rem,9vw,8rem)] leading-[0.88] tracking-[-0.03em]">
           <motion.span variants={rise} initial="hidden" animate="show" custom={1} className="block font-serif">
-            Hablan como
+            {t.home.titleA}
           </motion.span>
           <motion.span variants={rise} initial="hidden" animate="show" custom={2} className="block font-serif italic">
-            humanos.
+            {t.home.titleB}
           </motion.span>
           <motion.span
             variants={rise}
@@ -100,7 +106,7 @@ function Hero() {
             custom={3}
             className="mt-2 block font-mono text-[0.62em] font-medium tracking-[-0.06em] text-acid"
           >
-            <ScrambleText text="No lo son." delay={900} duration={1400} />
+            <ScrambleText text={t.home.titleC} delay={900} duration={1400} />
           </motion.span>
         </h1>
 
@@ -111,9 +117,8 @@ function Hero() {
           custom={4}
           className="mt-8 max-w-xl text-lg leading-relaxed text-white/60 sm:text-xl"
         >
-          Subí tus chats y en minutos va a existir alguien que escribe <em className="text-bone">exactamente</em>{" "}
-          como vos: tus muletillas, tus emojis, tu forma de cerrar una venta. Da un poquito de miedo.{" "}
-          <span className="text-bone">Está buenísimo.</span>
+          {t.home.subtitle.a} <em className="text-bone">{t.home.subtitle.em}</em> {t.home.subtitle.b}{" "}
+          <span className="text-bone">{t.home.subtitle.strong}</span>
         </motion.p>
 
         <motion.div
@@ -129,7 +134,7 @@ function Hero() {
               className="group relative overflow-hidden rounded-full bg-acid px-8 py-4 text-lg font-medium text-ink shadow-[0_0_60px_-10px_rgba(198,255,61,0.6)]"
             >
               <span className="relative z-10 flex items-center gap-2">
-                Conocé al tuyo
+                {t.home.cta}
                 <span className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
               </span>
               <span className="absolute inset-0 -translate-x-full bg-white/40 transition-transform duration-500 group-hover:translate-x-full" />
@@ -139,7 +144,7 @@ function Hero() {
             onClick={(e) => request(e)}
             className="font-mono text-sm text-white/50 underline decoration-white/20 underline-offset-4 transition hover:text-acid hover:decoration-acid"
           >
-            ya soy humano, quiero entrar
+            {t.home.already}
           </button>
         </motion.div>
       </div>
@@ -155,20 +160,19 @@ function Hero() {
   );
 }
 
-const MARQUEE = ["entrar", "¿sos humano?", "login", "demostralo", "entrar", "no es un bot", "login", "dale, entrá"];
-
 function Marquee() {
   const { request } = useLogin();
+  const { t } = useI18n();
   return (
     <button
       onClick={(e) => request(e)}
       className="group relative block w-full -rotate-2 overflow-hidden border-y border-acid/40 bg-acid py-5 text-ink"
-      aria-label="Entrar"
+      aria-label={t.home.login}
     >
       <div className="animate-marquee flex w-max group-hover:[animation-play-state:paused]">
         {[0, 1].map((k) => (
           <div key={k} className="flex shrink-0 items-center" aria-hidden={k === 1}>
-            {MARQUEE.map((w, i) => (
+            {t.home.marquee.map((w, i) => (
               <span key={i} className="flex items-center gap-8 px-4 font-serif text-4xl italic sm:text-6xl">
                 {w}
                 <span className="font-mono text-2xl not-italic">✦</span>
@@ -183,6 +187,7 @@ function Marquee() {
 
 function Finale() {
   const { request } = useLogin();
+  const { t } = useI18n();
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-36 text-center sm:px-10">
       <motion.p
@@ -192,7 +197,7 @@ function Finale() {
         transition={{ duration: 0.8 }}
         className="font-mono text-xs uppercase tracking-[0.2em] text-white/40"
       >
-        última pregunta
+        {t.home.lastQuestion}
       </motion.p>
       <motion.h2
         initial={{ opacity: 0, y: 50, filter: "blur(12px)" }}
@@ -201,7 +206,7 @@ function Finale() {
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
         className="mt-6 font-serif text-[clamp(2.6rem,7vw,6rem)] leading-[0.95] tracking-tight"
       >
-        ¿Listo para conocer a alguien <em className="text-acid">que no existe?</em>
+        {t.home.finaleA} <em className="text-acid">{t.home.finaleB}</em>
       </motion.h2>
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -216,7 +221,7 @@ function Finale() {
             className="group relative flex size-40 items-center justify-center rounded-full bg-bone text-lg font-medium text-ink transition-colors hover:bg-acid sm:size-48"
           >
             <span className="absolute inset-0 animate-ping rounded-full bg-acid/20 [animation-duration:2.5s]" />
-            <span className="relative">Entrar →</span>
+            <span className="relative">{t.home.finaleCta}</span>
           </button>
         </Magnetic>
       </motion.div>

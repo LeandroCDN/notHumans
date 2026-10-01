@@ -1,60 +1,52 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useI18n } from "../i18n";
+
+export type Audience = "consumers" | "wholesale" | "companies" | "mixed";
+export type ChatRole = "questions" | "sells" | "orders" | "aftersales";
 
 export type Business = {
   name: string;
   whatTheySell: string;
   where: string;
-  audience: string;
-  roles: string[];
+  audience: Audience | "";
+  roles: ChatRole[];
   notes: string;
 };
 
 export const EMPTY_BUSINESS: Business = { name: "", whatTheySell: "", where: "", audience: "", roles: [], notes: "" };
 
-const AUDIENCES = ["Consumidor final", "Mayoristas", "Empresas", "Un poco de todo"];
-const ROLES = ["Responde consultas", "Vende", "Toma pedidos", "Postventa y reclamos"];
-
 export function BusinessForm({ value, onChange }: { value: Business; onChange: (b: Business) => void }) {
+  const t = useI18n().t.create.business;
   const set = <K extends keyof Business>(k: K, v: Business[K]) => onChange({ ...value, [k]: v });
 
   return (
     <div className="grid gap-6 sm:grid-cols-2">
-      <Text label="Nombre del notHuman" placeholder="Martina de la tienda" value={value.name} onChange={(v) => set("name", v)} />
-      <Text
-        label="¿Qué vende?"
-        placeholder="Ropa de mujer, talles S a XL"
-        value={value.whatTheySell}
-        onChange={(v) => set("whatTheySell", v)}
-      />
-      <Text
-        label="¿Dónde vende?"
-        placeholder="CABA, con envíos a todo el país"
-        value={value.where}
-        onChange={(v) => set("where", v)}
-      />
+      <Text label={t.name} placeholder={t.namePh} value={value.name} onChange={(v) => set("name", v)} />
+      <Text label={t.sells} placeholder={t.sellsPh} value={value.whatTheySell} onChange={(v) => set("whatTheySell", v)} />
+      <Text label={t.where} placeholder={t.wherePh} value={value.where} onChange={(v) => set("where", v)} />
       <Chips
-        label="¿A quién le vende?"
-        options={AUDIENCES}
+        label={t.audience}
+        options={t.audiences}
         selected={value.audience ? [value.audience] : []}
         onToggle={(o) => set("audience", value.audience === o ? "" : o)}
       />
       <div className="sm:col-span-2">
         <Chips
-          label="¿Qué hace en el chat?"
-          options={ROLES}
+          label={t.roles}
+          options={t.roleOptions}
           selected={value.roles}
           onToggle={(o) => set("roles", value.roles.includes(o) ? value.roles.filter((r) => r !== o) : [...value.roles, o])}
         />
       </div>
       <label className="group block sm:col-span-2">
-        <FieldLabel>Algo más que debamos saber (opcional)</FieldLabel>
+        <FieldLabel>{t.notes}</FieldLabel>
         <textarea
           value={value.notes}
           onChange={(e) => set("notes", e.target.value)}
           rows={3}
-          placeholder="Nunca da descuentos por WhatsApp, siempre tutea, odia los audios…"
+          placeholder={t.notesPh}
           className={`${inputClass} h-auto resize-none py-3`}
         />
       </label>
@@ -87,24 +79,30 @@ function Text(props: { label: string; placeholder: string; value: string; onChan
   );
 }
 
-function Chips(props: { label: string; options: string[]; selected: string[]; onToggle: (o: string) => void }) {
+/** Opciones con clave estable (lo que se guarda) y etiqueta traducida (lo que se ve). */
+function Chips<K extends string>(props: {
+  label: string;
+  options: Record<K, string>;
+  selected: K[];
+  onToggle: (o: K) => void;
+}) {
   return (
     <div>
       <FieldLabel>{props.label}</FieldLabel>
       <div className="flex flex-wrap gap-2">
-        {props.options.map((o) => {
-          const on = props.selected.includes(o);
+        {(Object.entries(props.options) as [K, string][]).map(([key, label]) => {
+          const on = props.selected.includes(key);
           return (
             <motion.button
-              key={o}
+              key={key}
               type="button"
               whileTap={{ scale: 0.94 }}
-              onClick={() => props.onToggle(o)}
+              onClick={() => props.onToggle(key)}
               className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                 on ? "border-acid bg-acid text-ink" : "border-white/15 text-white/60 hover:border-white/40 hover:text-bone"
               }`}
             >
-              {o}
+              {label}
             </motion.button>
           );
         })}
