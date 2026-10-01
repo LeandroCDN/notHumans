@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE, SESSION_MAX_AGE, checkCredentials, createSessionValue } from "@/lib/auth";
+import { SESSION_COOKIE, SESSION_MAX_AGE, checkCredentials, createSessionValue, missingAuthConfig } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  const missing = missingAuthConfig();
+  if (missing.length > 0) {
+    return NextResponse.json({ ok: false, missing }, { status: 500 });
+  }
+
   const body = (await req.json().catch(() => null)) as { user?: unknown; password?: unknown } | null;
   const user = typeof body?.user === "string" ? body.user : "";
   const password = typeof body?.password === "string" ? body.password : "";

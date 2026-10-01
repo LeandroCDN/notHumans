@@ -17,6 +17,14 @@ function accounts(): Map<string, { name: string; password: string }> {
   return map;
 }
 
+/** Variables de entorno que faltan para que el login funcione. */
+export function missingAuthConfig(): string[] {
+  const missing: string[] = [];
+  if (accounts().size === 0) missing.push("AUTH_USERS");
+  if (!process.env.AUTH_SECRET) missing.push("AUTH_SECRET");
+  return missing;
+}
+
 function secret(): string {
   const s = process.env.AUTH_SECRET;
   if (!s) throw new Error("Falta AUTH_SECRET en el entorno");

@@ -73,6 +73,7 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorIdx, setErrorIdx] = useState(0);
+  const [configError, setConfigError] = useState<string | null>(null);
   const [wipe, setWipe] = useState<Origin | null>(null);
   const [scope, animate] = useAnimate();
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -106,6 +107,17 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
     if (!res?.ok) {
       setPhase("error");
       setErrorIdx((i) => (i + 1) % ERRORS.length);
+      // Credenciales malas → chiste. Servidor mal configurado → decirlo claro.
+      const data = res && res.status !== 401 ? ((await res.json().catch(() => null)) as { missing?: string[] } | null) : null;
+      setConfigError(
+        !res
+          ? "No hay conexión con el servidor."
+          : res.status === 401
+            ? null
+            : data?.missing?.length
+              ? `Falta configurar ${data.missing.join(" y ")} en el servidor.`
+              : `Error del servidor (${res.status}).`,
+      );
       animate(scope.current, { x: [0, -14, 12, -9, 7, -4, 0] }, { duration: 0.45 });
       return;
     }
@@ -170,13 +182,13 @@ function LoginModal({ origin, onClose }: { origin: Origin; onClose: () => void }
               <AnimatePresence mode="wait">
                 {phase === "error" && (
                   <motion.p
-                    key={errorIdx}
+                    key={configError ?? errorIdx}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     className="font-mono text-xs text-rose"
                   >
-                    {ERRORS[errorIdx]}
+                    {configError ?? ERRORS[errorIdx]}
                   </motion.p>
                 )}
               </AnimatePresence>
