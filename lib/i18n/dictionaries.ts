@@ -121,6 +121,8 @@ const en = {
   },
   share: {
     title: "Public link",
+    button: "🔗 Share",
+    manage: "manage in profile →",
     body: "Anyone with the link can chat with this notHuman, without an account. It always answers with the current version.",
     create: "🔗 Create public link",
     copy: "Copy",
@@ -500,6 +502,8 @@ const es: Dict = {
   },
   share: {
     title: "Link público",
+    button: "🔗 Compartir",
+    manage: "administrar en el perfil →",
     body: "Cualquiera con el link puede chatear con este notHuman, sin cuenta. Responde siempre con la versión vigente.",
     create: "🔗 Crear link público",
     copy: "Copiar",

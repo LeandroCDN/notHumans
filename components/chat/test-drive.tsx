@@ -12,6 +12,7 @@ import { findLeak } from "@/lib/nothuman/pipeline";
 import { StoreError, refreshNotHumans, saveCorrections, useNotHumans } from "@/lib/nothuman/store";
 import { useI18n } from "../i18n";
 import { WithPlaceholders } from "../nothuman/profile-view";
+import { ShareButton } from "../nothuman/share-link";
 import { StoreErrorNotice, storeErrorMessage } from "../nothuman/store-ui";
 import { Bubble, Dots } from "./bubbles";
 import { type ConvTurn, useConversation } from "./use-conversation";
@@ -213,8 +214,8 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_300px]">
         {/* El teléfono */}
-        <section className="flex h-[min(72dvh,720px)] min-h-[460px] flex-col overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm">
-          <header className="flex items-center gap-3 border-b border-white/10 px-5 py-3.5">
+        <section className="flex h-[min(72dvh,720px)] min-h-[460px] flex-col rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+          <header className="relative z-20 flex items-center gap-3 border-b border-white/10 px-5 py-3.5">
             <div className={`animate-morph size-10 shrink-0 bg-gradient-to-br ${hue}`} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium leading-tight">{nh.name}</p>
@@ -230,6 +231,7 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
                 </motion.p>
               </AnimatePresence>
             </div>
+            <ShareButton id={nh.id} />
             {turns.length > 0 && (
               <button
                 onClick={reset}
