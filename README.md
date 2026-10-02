@@ -27,8 +27,8 @@ npm run dev
 1. **Crear:** subís exports de WhatsApp (o probás con los sets de `public/samples/`). El parser arma conversaciones y turnos en el navegador.
 2. **Generar:** las conversaciones van a DeepSeek por bloques (`/api/generate/extract`): salen ejemplos con marcadores (`{price}`, `{product}`…) y notas de estilo. Después `/api/generate/profile` arma el perfil.
 3. **Explorar:** los notHumans se guardan en Supabase (`/api/nothumans`, migraciones en `supabase/migrations/`) con versiones; se pueden descargar e importar como JSON.
-5. **Corregir y versionar:** en el test drive, "✎ corregir" una respuesta y "Guardar como vN" crea una versión nueva con esas correcciones como ejemplos fijos. El perfil muestra el historial y permite volver a una versión anterior.
 4. **Test drive** (`/app/chat`): chateás como cliente con un notHuman. Elegís notHuman y modelo (Flash / V4 Pro, con o sin thinking) y ves tokens, caché y costo de cada respuesta. El prompt es fijo por notHuman (perfil + ejemplos canónicos) para que DeepSeek lo sirva desde caché; los modelos y precios están en `lib/llm/models.ts`.
+5. **Corregir y versionar:** en el test drive, "✎ corregir" una respuesta y "Guardar como vN" crea una versión nueva con esas correcciones como ejemplos fijos. El perfil muestra el historial y permite volver a una versión anterior.
 
 ## Tests
 
