@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MODELS, costUsd, findModel } from "@/lib/llm/models";
 import { chatSystemPrompt } from "./prompts";
-import { ProfileSchema } from "./schema";
+import { NotHumanSchema, ProfileSchema } from "./schema";
 
 const profile = ProfileSchema.parse({
   summary: "Escribe corto y cercano.",
@@ -49,5 +49,28 @@ describe("modelos y costo", () => {
     const conCache = costUsd({ input: 10_000, cacheHit: 9_000, output: 100 }, flash);
     expect(conCache).toBeLessThan(sinCache);
     expect(sinCache).toBeCloseTo((10_000 * 0.3 + 100 * 1.2) / 1_000_000);
+  });
+});
+
+describe("NotHumanSchema", () => {
+  const nh = {
+    id: "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b",
+    name: "Martina",
+    owner: "Martina",
+    createdAt: 1_790_000_000_000,
+    version: 1,
+    business: persona.business,
+    profile,
+    examples: persona.examples.map((e) => ({ ...e, canonical: true })),
+    stats: { conversations: 6, examplesFound: 1, examplesDropped: 0, usage: { input: 1, cacheHit: 0, output: 1 }, model: "x" },
+  };
+
+  it("acepta un notHuman como el que se descarga en JSON", () => {
+    expect(NotHumanSchema.safeParse(JSON.parse(JSON.stringify(nh))).success).toBe(true);
+  });
+
+  it("rechaza un JSON que no es un notHuman", () => {
+    expect(NotHumanSchema.safeParse({ ...nh, id: "1" }).success).toBe(false);
+    expect(NotHumanSchema.safeParse({ hola: "mundo" }).success).toBe(false);
   });
 });

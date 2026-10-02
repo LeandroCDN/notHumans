@@ -1,11 +1,11 @@
 # TODO — notHumans
 
 ## Ahora: Supabase (guardar y versionar notHumans)
-- [ ] Crear el proyecto en supabase.com y conectar el conector de Supabase a Claude
-- [ ] Aplicar `supabase/migrations/0001_nothumans.sql`
+- [x] Crear el proyecto en supabase.com y conectar el conector de Supabase a Claude
+- [x] Aplicar las migraciones de `supabase/migrations/`
 - [ ] Variables en Vercel: `SUPABASE_URL` y `SUPABASE_SECRET_KEY` (solo server, nunca al navegador)
-- [ ] `lib/nothuman/store.ts` pasa a llamar a la API (`/api/nothumans`) en vez de localStorage
-- [ ] Botón para importar los notHumans que quedaron en localStorage (y un "importar JSON")
+- [x] `lib/nothuman/store.ts` pasa a llamar a la API (`/api/nothumans`) en vez de localStorage
+- [x] Botón para subir los notHumans que quedaron en localStorage, e "Importar JSON"
 - [ ] Cada cambio de perfil/ejemplos crea una versión nueva (v1, v2…) y se puede volver atrás
 
 ## Después: el puesto de trabajo

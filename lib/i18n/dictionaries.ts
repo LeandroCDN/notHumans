@@ -116,8 +116,28 @@ const en = {
     createCta: "Create one →",
     listTitle: "Your",
     listAccent: "notHumans.",
-    localNote: "For now they live in this browser. Download the JSON if you want to keep one.",
-    notFound: "This notHuman doesn't exist in this browser.",
+    localNote: "Saved in the cloud: you'll see them from any browser.",
+    notFound: "This notHuman doesn't exist (or it was deleted).",
+  },
+  store: {
+    errors: {
+      storage_not_configured:
+        "The database isn't set up on the server. Add SUPABASE_URL and SUPABASE_SECRET_KEY in Vercel → Settings → Environment Variables and redeploy.",
+      unauthorized: "Your session expired. Log in again.",
+      generic: (detail: string) => `Couldn't reach the database: ${detail}`,
+    },
+    retry: "Try again",
+    leftovers: (n: number) =>
+      n === 1 ? "There's 1 notHuman saved only in this browser." : `There are ${n} notHumans saved only in this browser.`,
+    upload: "Upload to the cloud",
+    uploading: "Uploading…",
+    uploadFailed: (n: number) => `${n} couldn't be uploaded. Try again in a while.`,
+    importJson: "Import JSON",
+    imported: (name: string) => `${name} imported.`,
+    alreadyThere: (name: string) => `${name} was already there.`,
+    invalidJson: "That file isn't a valid notHuman.",
+    saveFailed: (detail: string) =>
+      `Couldn't save it to the database (${detail}). A copy stayed in this browser: you can upload it from Explore.`,
   },
   common: {
     back: "← back",
@@ -128,7 +148,7 @@ const en = {
     titleA: "Bring a",
     titleB: "notHuman to life.",
     intro:
-      "Start with the chats: that's where the way it talks comes from. For now everything is processed in your browser and nothing gets uploaded.",
+      "Start with the chats: that's where the way it talks comes from. The chats are read in your browser and only go to the AI to learn the style: what gets saved is the personality, never the chats.",
     sections: {
       chats: "The chats",
       understood: "What we understood",
@@ -221,7 +241,7 @@ const en = {
       generic: (detail: string) => `Something went wrong with the AI: ${detail}`,
     },
     born: (name: string) => `${name} was born.`,
-    saved: "Saved in this browser.",
+    saved: "Saved in the cloud.",
     openProfile: "Open profile →",
     download: "Download JSON",
   },
@@ -393,8 +413,28 @@ const es: Dict = {
     createCta: "Crear uno →",
     listTitle: "Tus",
     listAccent: "notHumans.",
-    localNote: "Por ahora viven en este navegador. Descargá el JSON si querés guardar alguno.",
-    notFound: "Este notHuman no existe en este navegador.",
+    localNote: "Guardados en la nube: los ves desde cualquier navegador.",
+    notFound: "Este notHuman no existe (o lo borraron).",
+  },
+  store: {
+    errors: {
+      storage_not_configured:
+        "La base de datos no está configurada en el servidor. Cargá SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel → Settings → Environment Variables y redeployá.",
+      unauthorized: "Se venció la sesión. Volvé a entrar.",
+      generic: (detail) => `No se pudo hablar con la base: ${detail}`,
+    },
+    retry: "Reintentar",
+    leftovers: (n) =>
+      n === 1 ? "Hay 1 notHuman guardado solo en este navegador." : `Hay ${n} notHumans guardados solo en este navegador.`,
+    upload: "Subirlos a la nube",
+    uploading: "Subiendo…",
+    uploadFailed: (n) => `${n} no se pudieron subir. Probá de nuevo en un rato.`,
+    importJson: "Importar JSON",
+    imported: (name) => `${name} importado.`,
+    alreadyThere: (name) => `${name} ya estaba.`,
+    invalidJson: "Ese archivo no es un notHuman válido.",
+    saveFailed: (detail) =>
+      `No se pudo guardar en la base (${detail}). Quedó una copia en este navegador: la podés subir desde Explorar.`,
   },
   common: {
     back: "← volver",
@@ -405,7 +445,7 @@ const es: Dict = {
     titleA: "Dale vida a un",
     titleB: "notHuman.",
     intro:
-      "Empezá por los chats: de ahí sale cómo habla. Por ahora todo se procesa en tu navegador y no se sube a ningún lado.",
+      "Empezá por los chats: de ahí sale cómo habla. Los chats se leen en tu navegador y solo pasan por la IA para aprender el estilo: se guarda la personalidad, nunca los chats.",
     sections: {
       chats: "Los chats",
       understood: "Lo que entendimos",
@@ -498,7 +538,7 @@ const es: Dict = {
       generic: (detail) => `Algo falló con la IA: ${detail}`,
     },
     born: (name) => `Nació ${name}.`,
-    saved: "Guardado en este navegador.",
+    saved: "Guardado en la nube.",
     openProfile: "Ver perfil →",
     download: "Descargar JSON",
   },

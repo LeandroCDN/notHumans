@@ -89,14 +89,15 @@ export type Profile = z.infer<typeof ProfileSchema>;
 
 export type Usage = { input: number; cacheHit: number; output: number };
 
-export type BusinessInput = {
-  name: string;
-  whatTheySell: string;
-  where: string;
-  audience: string;
-  roles: string[];
-  notes: string;
-};
+export const BusinessSchema = z.object({
+  name: z.string().max(200).default(""),
+  whatTheySell: z.string().max(500).default(""),
+  where: z.string().max(300).default(""),
+  audience: z.string().max(100).default(""),
+  roles: z.array(z.string().max(100)).max(10).default([]),
+  notes: z.string().max(2000).default(""),
+});
+export type BusinessInput = z.infer<typeof BusinessSchema>;
 
 export type NotHuman = {
   id: string;
@@ -115,3 +116,24 @@ export type NotHuman = {
     model: string;
   };
 };
+
+const UsageSchema = z.object({ input: z.number(), cacheHit: z.number(), output: z.number() });
+
+/** Un notHuman completo, como llega del navegador para guardarlo (o de un JSON descargado). */
+export const NotHumanSchema = z.object({
+  id: z.uuid(),
+  name: z.string().trim().min(1).max(200),
+  owner: z.string().trim().min(1).max(120),
+  createdAt: z.number(),
+  version: z.number().int().min(1),
+  business: BusinessSchema,
+  profile: ProfileSchema,
+  examples: z.array(ExampleSchema.extend({ canonical: z.boolean() })).max(2000),
+  stats: z.object({
+    conversations: z.number(),
+    examplesFound: z.number(),
+    examplesDropped: z.number(),
+    usage: UsageSchema,
+    model: z.string(),
+  }),
+});

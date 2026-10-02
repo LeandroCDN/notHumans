@@ -3,20 +3,30 @@
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import type { NotHuman } from "@/lib/nothuman/schema";
-import { deleteNotHuman, downloadJson, useNotHumans } from "@/lib/nothuman/store";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { StoreError, deleteNotHuman, downloadJson, useLocalLeftovers, useNotHumans } from "@/lib/nothuman/store";
 import { ComingSoon } from "../coming-soon";
 import { useI18n } from "../i18n";
 import { ProfileView } from "./profile-view";
+import { ImportJsonButton, LeftoversBanner, StoreErrorNotice } from "./store-ui";
 
 const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
 
 export function ExploreView() {
   const { t: dict } = useI18n();
   const t = dict.explore;
-  const list = useNotHumans();
+  const { list, error, reload } = useNotHumans();
+  const leftovers = useLocalLeftovers();
 
   if (list === null) return null;
-  if (list.length === 0) return <ComingSoon section="explore" cta={{ href: "/app/new", label: t.createCta }} />;
+  if (list.length === 0 && !error && leftovers.length === 0) {
+    return (
+      <ComingSoon section="explore" cta={{ href: "/app/new", label: t.createCta }}>
+        <ImportJsonButton />
+      </ComingSoon>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-32 pt-6 sm:px-10">
@@ -27,7 +37,12 @@ export function ExploreView() {
       <h1 className="mt-4 font-serif text-[clamp(2.8rem,8vw,6rem)] leading-[0.9] tracking-tight">
         {t.listTitle} <em className="text-acid">{t.listAccent}</em>
       </h1>
-      <p className="mt-4 text-white/45">{t.localNote}</p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-white/45">{t.localNote}</p>
+        <ImportJsonButton />
+      </div>
+      {error && <StoreErrorNotice error={error} reload={reload} />}
+      <LeftoversBanner />
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence>
@@ -67,7 +82,7 @@ export function ExploreView() {
 
 export function NotHumanDetail({ id }: { id: string }) {
   const { t: dict } = useI18n();
-  const list = useNotHumans();
+  const { list, error, reload } = useNotHumans();
   if (list === null) return null;
   const nh = list.find((x) => x.id === id);
 
@@ -76,7 +91,9 @@ export function NotHumanDetail({ id }: { id: string }) {
       <Link href="/app/explore" className="font-mono text-xs text-white/40 transition hover:text-acid">
         {dict.common.back}
       </Link>
-      {!nh ? (
+      {error && !nh ? (
+        <StoreErrorNotice error={error} reload={reload} />
+      ) : !nh ? (
         <p className="mt-16 font-serif text-4xl">{dict.explore.notFound}</p>
       ) : (
         <Detail nh={nh} />
@@ -87,6 +104,8 @@ export function NotHumanDetail({ id }: { id: string }) {
 
 function Detail({ nh }: { nh: NotHuman }) {
   const { t: dict } = useI18n();
+  const router = useRouter();
+  const [deleteError, setDeleteError] = useState<StoreError | null>(null);
   return (
     <div className="mt-10">
       <div className="mb-10 flex flex-wrap gap-3">
@@ -99,16 +118,17 @@ function Detail({ nh }: { nh: NotHuman }) {
         <DownloadButton nh={nh} />
         <button
           onClick={() => {
-            if (confirm(dict.profile.confirmDelete)) {
-              deleteNotHuman(nh.id);
-              window.location.href = "/app/explore";
-            }
+            if (!confirm(dict.profile.confirmDelete)) return;
+            deleteNotHuman(nh.id)
+              .then(() => router.push("/app/explore"))
+              .catch((e) => setDeleteError(e instanceof StoreError ? e : new StoreError("generic", String(e))));
           }}
           className="rounded-full border border-rose/30 px-4 py-2 text-sm text-rose transition hover:bg-rose/10"
         >
           {dict.profile.delete}
         </button>
       </div>
+      {deleteError && <StoreErrorNotice error={deleteError} reload={() => setDeleteError(null)} />}
       <ProfileView nh={nh} />
     </div>
   );

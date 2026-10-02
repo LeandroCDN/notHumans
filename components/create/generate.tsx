@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GenerationError, type Progress, generateNotHuman } from "@/lib/nothuman/generate";
 import type { NotHuman } from "@/lib/nothuman/schema";
-import { downloadJson, saveNotHuman } from "@/lib/nothuman/store";
+import { StoreError, downloadJson, keepLocally, saveNotHuman } from "@/lib/nothuman/store";
 import type { Conversation } from "@/lib/whatsapp/analyze";
 import { useI18n } from "../i18n";
 import { Magnetic } from "../magnetic";
@@ -16,7 +16,7 @@ type State =
   | { kind: "idle" }
   | { kind: "running"; progress: Progress }
   | { kind: "error"; message: string }
-  | { kind: "done"; nh: NotHuman };
+  | { kind: "done"; nh: NotHuman; saveError?: string };
 
 export function GenerateSection(props: { conversations: Conversation[]; owner: string | null; business: Business }) {
   const { locale, t: dict } = useI18n();
@@ -45,8 +45,16 @@ export function GenerateSection(props: { conversations: Conversation[]; owner: s
         uiLang: locale,
         onProgress: (progress) => setState({ kind: "running", progress }),
       });
-      saveNotHuman(nh);
-      setState({ kind: "done", nh });
+      // Generarlo cuesta plata: si la base falla, no se pierde (queda en el navegador para subirlo después).
+      try {
+        await saveNotHuman(nh);
+        setState({ kind: "done", nh });
+      } catch (err) {
+        keepLocally(nh);
+        const e = err instanceof StoreError ? err : new StoreError("generic", String(err));
+        const errors = dict.store.errors;
+        setState({ kind: "done", nh, saveError: e.code === "generic" ? errors.generic(e.message) : errors[e.code] });
+      }
     } catch (err) {
       const e = err instanceof GenerationError ? err : new GenerationError("generic", String(err));
       setState({ kind: "error", message: e.code === "generic" ? t.errors.generic(e.message) : t.errors[e.code] });
@@ -58,7 +66,7 @@ export function GenerateSection(props: { conversations: Conversation[]; owner: s
     <AnimatePresence mode="wait">
       {state.kind === "done" ? (
         <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <Born nh={state.nh} />
+          <Born nh={state.nh} saveError={state.saveError} />
         </motion.div>
       ) : state.kind === "running" ? (
         <motion.div key="running" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -160,8 +168,8 @@ function Running({ progress }: { progress: Progress }) {
   );
 }
 
-function Born({ nh }: { nh: NotHuman }) {
-  const { generate: t, chat } = useI18n().t;
+function Born({ nh, saveError }: { nh: NotHuman; saveError?: string }) {
+  const { generate: t, chat, store } = useI18n().t;
   return (
     <div>
       <motion.div
@@ -171,7 +179,7 @@ function Born({ nh }: { nh: NotHuman }) {
         className="mb-12 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-[32px] bg-acid px-6 py-5 text-ink sm:px-8"
       >
         <p className="font-serif text-3xl sm:text-4xl">{t.born(nh.name)}</p>
-        <p className="font-mono text-xs text-ink/60">{t.saved}</p>
+        {!saveError && <p className="font-mono text-xs text-ink/60">{t.saved}</p>}
         <div className="flex flex-1 flex-wrap justify-end gap-3">
           <button
             onClick={() => downloadJson(nh)}
@@ -179,17 +187,26 @@ function Born({ nh }: { nh: NotHuman }) {
           >
             {t.download}
           </button>
-          <Link
-            href={`/app/n/${nh.id}`}
-            className="rounded-full border border-ink/25 px-4 py-2 text-sm transition hover:bg-ink/10"
-          >
-            {t.openProfile}
-          </Link>
-          <Link href={`/app/chat?nh=${nh.id}`} className="rounded-full bg-ink px-4 py-2 text-sm text-acid">
-            {chat.open}
-          </Link>
+          {!saveError && (
+            <>
+              <Link
+                href={`/app/n/${nh.id}`}
+                className="rounded-full border border-ink/25 px-4 py-2 text-sm transition hover:bg-ink/10"
+              >
+                {t.openProfile}
+              </Link>
+              <Link href={`/app/chat?nh=${nh.id}`} className="rounded-full bg-ink px-4 py-2 text-sm text-acid">
+                {chat.open}
+              </Link>
+            </>
+          )}
         </div>
       </motion.div>
+      {saveError && (
+        <p className="-mt-8 mb-12 rounded-2xl border border-rose/30 bg-rose/[0.06] px-4 py-3 text-sm text-rose">
+          {store.saveFailed(saveError)}
+        </p>
+      )}
       <ProfileView nh={nh} />
     </div>
   );

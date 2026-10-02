@@ -10,7 +10,8 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   (Chromium en `/opt/pw-browsers/chromium`) cuando cambia la UI.
 - La web tiene que ser linda y sorprendente (Motion para animaciones). Todo texto de UI va en
   `lib/i18n/dictionaries.ts` en inglés (default) y español.
-- La red del contenedor de Claude bloquea DeepSeek y Vercel: para probar sin key, `LLM_MOCK=1`.
+- La red del contenedor de Claude bloquea DeepSeek, Vercel y Supabase: para probar sin key, `LLM_MOCK=1`
+  (guarda en memoria). La base se maneja con el conector de Supabase.
 
 ## Decisiones tomadas
 - notHumans es solo la capa de personalidad: no hay integración con WhatsApp ni base de conocimiento
@@ -22,7 +23,11 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   Modelos actuales: `deepseek-flash` y `deepseek-v4-pro`; el modo thinking viene prendido por defecto y lo apagamos
   salvo que se elija una opción "thinking".
 - La generación la orquesta el navegador (un request corto por bloque) para no depender de colas.
-- Por ahora los notHumans se guardan en localStorage (`lib/nothuman/store.ts`). Supabase viene después.
+- Los notHumans se guardan en Supabase (proyecto "NotHuman", ref `fkrfqburxpqtafytnkoy`): tablas `nothumans` +
+  `nothuman_versions` y la vista `nothumans_current`. Solo accede el server con `SUPABASE_SECRET_KEY`; RLS sin
+  políticas y sin permisos para `anon`/`authenticated`. Migraciones en `supabase/migrations/` (aplicarlas con el
+  conector de Supabase). Sin Supabase configurado, en desarrollo (o con `LLM_MOCK=1`) se guarda en memoria.
+- localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 
 ## Estado y próximos pasos
 1. ✅ Home, login, panel, i18n EN/ES
@@ -30,4 +35,5 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 3. ✅ Generación con DeepSeek: ejemplos con marcadores + perfil; Explorar y detalle
 4. ✅ Test drive `/app/chat`: chat como cliente, selector de notHuman y de modelo, tokens/caché/costo por respuesta
    (modelos y precios en `lib/llm/models.ts`; el notHuman espera ~1,3 s por si el cliente manda varios mensajes)
-5. ⏭️ Supabase para guardar y versionar notHumans
+5. ✅ Supabase: guardar notHumans (v1), subir los que había en localStorage, importar JSON
+6. ⏭️ Versiones nuevas (editar / corregir desde el chat) y el "puesto de trabajo" (ver `TODO.md`)

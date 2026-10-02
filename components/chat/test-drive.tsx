@@ -11,6 +11,7 @@ import type { NotHuman } from "@/lib/nothuman/schema";
 import { useNotHumans } from "@/lib/nothuman/store";
 import { useI18n } from "../i18n";
 import { WithPlaceholders } from "../nothuman/profile-view";
+import { StoreErrorNotice } from "../nothuman/store-ui";
 
 const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
 
@@ -22,9 +23,16 @@ type Turn = ChatTurn & { id: number; meta?: ChatReply };
 export function TestDrive({ initialId }: { initialId?: string }) {
   const { t: dict } = useI18n();
   const t = dict.chat;
-  const list = useNotHumans();
+  const { list, error, reload } = useNotHumans();
 
   if (list === null) return null;
+  if (error && list.length === 0) {
+    return (
+      <main className="mx-auto max-w-4xl px-4 pt-16 sm:px-10">
+        <StoreErrorNotice error={error} reload={reload} />
+      </main>
+    );
+  }
   if (list.length === 0) {
     return (
       <main className="mx-auto flex min-h-[80dvh] max-w-4xl flex-col justify-center px-4 sm:px-10">

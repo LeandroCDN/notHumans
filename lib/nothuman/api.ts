@@ -3,15 +3,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/auth";
 import { MissingKeyError } from "@/lib/llm";
+import { BusinessSchema } from "./schema";
 
-export const BusinessSchema = z.object({
-  name: z.string().max(200).default(""),
-  whatTheySell: z.string().max(500).default(""),
-  where: z.string().max(300).default(""),
-  audience: z.string().max(100).default(""),
-  roles: z.array(z.string().max(100)).max(10).default([]),
-  notes: z.string().max(2000).default(""),
-});
+export { BusinessSchema };
 
 export const BaseRequest = z.object({
   owner: z.string().min(1).max(120),
