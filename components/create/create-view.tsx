@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { buildConversations, detectOwner, summarize, usableChats } from "@/lib/whatsapp/analyze";
 import { type ChatFile, readChatFiles } from "@/lib/whatsapp/files";
 import { parseExport } from "@/lib/whatsapp/parse";
+import { missingVoiceNotes, voiceNotes, withTranscripts } from "@/lib/whatsapp/voice";
 import { SAMPLE_SETS, type SampleSet, loadSampleSet } from "@/lib/whatsapp/sample";
 import { useI18n } from "../i18n";
 import { FileList, type FileEntry, OwnerPicker, Personality, Stats } from "./analysis";
@@ -13,6 +14,7 @@ import { BusinessForm, EMPTY_BUSINESS } from "./business-form";
 import { ConversationViewer } from "./conversation-viewer";
 import { Dropzone } from "./dropzone";
 import { GenerateSection } from "./generate";
+import { VoiceNotes } from "./voice-notes";
 
 const reveal = {
   initial: { opacity: 0, y: 40, filter: "blur(10px)" },
@@ -27,8 +29,27 @@ export function CreateView() {
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [pickedOwner, setPickedOwner] = useState<string | null>(null);
   const [business, setBusiness] = useState(EMPTY_BUSINESS);
+  // Notas de voz ya transcriptas, por id (archivo + adjunto).
+  const [transcripts, setTranscripts] = useState<Record<string, string>>({});
 
-  const chats = useMemo(() => entries.flatMap((e) => ("chat" in e ? [e.chat] : [])), [entries]);
+  // Los chats con los audios transcriptos reemplazados por su texto (🎤).
+  const shown = useMemo(
+    () => entries.map((e) => ("chat" in e ? { ...e, chat: withTranscripts(e.chat, e.key, transcripts) } : e)),
+    [entries, transcripts],
+  );
+  const chats = useMemo(() => shown.flatMap((e) => ("chat" in e ? [e.chat] : [])), [shown]);
+  const voice = useMemo(() => {
+    const notes = [];
+    let missing = 0;
+    for (const e of entries) {
+      if (!("chat" in e) || !usableChats([e.chat]).length) continue;
+      notes.push(...voiceNotes(e.chat, e.key, e.audios ?? {}));
+      missing += missingVoiceNotes(e.chat, e.audios ?? {});
+    }
+    const langs = entries.flatMap((e) => ("chat" in e && e.chat.language !== "unknown" ? [e.chat.language] : []));
+    const language = langs.length ? (langs.filter((l) => l === "es").length >= langs.length / 2 ? "es" : "en") : undefined;
+    return { notes, missing, language } as const;
+  }, [entries]);
   const guess = useMemo(() => detectOwner(chats), [chats]);
   const owner = pickedOwner && guess.candidates.some((c) => c.name === pickedOwner) ? pickedOwner : guess.owner;
   const conversations = useMemo(() => (owner ? buildConversations(chats, owner) : []), [chats, owner]);
@@ -43,7 +64,7 @@ export function CreateView() {
         const key = `${f.name}:${f.text.length}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        next.push({ key, chat: parseExport(f.text, f.name) });
+        next.push({ key, chat: parseExport(f.text, f.name), ...(f.audios ? { audios: f.audios } : {}) });
       }
       return next;
     });
@@ -88,11 +109,20 @@ export function CreateView() {
         <div className="space-y-4">
           <Dropzone onFiles={onFiles} compact={entries.length > 0} />
           {entries.length > 0 ? (
-            <FileList
-              entries={entries}
-              owner={owner}
-              onRemove={(key) => setEntries((prev) => prev.filter((e) => e.key !== key))}
-            />
+            <>
+              <FileList
+                entries={shown}
+                owner={owner}
+                onRemove={(key) => setEntries((prev) => prev.filter((e) => e.key !== key))}
+              />
+              <VoiceNotes
+                notes={voice.notes}
+                missing={voice.missing}
+                language={voice.language}
+                transcripts={transcripts}
+                onTranscript={(id, text) => setTranscripts((prev) => ({ ...prev, [id]: text }))}
+              />
+            </>
           ) : (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">

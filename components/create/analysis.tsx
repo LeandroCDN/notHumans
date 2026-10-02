@@ -7,7 +7,9 @@ import type { Dict } from "@/lib/i18n/dictionaries";
 import { useI18n } from "../i18n";
 import { CountUp } from "./count-up";
 
-export type FileEntry = { key: string; chat: ParsedChat } | { key: string; error: string; fileName: string };
+export type FileEntry =
+  | { key: string; chat: ParsedChat; audios?: Record<string, Uint8Array> }
+  | { key: string; error: string; fileName: string };
 
 function warningFor(chat: ParsedChat, owner: string | null, t: Dict["create"]["files"]): string | null {
   if (!chat.format) return t.notWhatsapp;

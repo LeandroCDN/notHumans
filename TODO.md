@@ -27,6 +27,11 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 - [ ] Averiguar de dónde sale el stock (planilla, Tiendanube, Shopify, MercadoLibre…) para ver si conviene
   integración directa o que lo mande el negocio por la API
 
+## Notas de voz
+- [x] Transcribir los audios del .zip "con archivos" (Groq Whisper) y sumarlos a las conversaciones con 🎤
+- [ ] Probar con un export real con audios (iOS y Android) y ajustar
+- [ ] Más adelante: que el notHuman responda con audio (text-to-speech / voz clonada, con consentimiento)
+
 ## Ideas sueltas
 - [x] Entrenar desde el chat: corregir una respuesta en el test drive ("ella lo diría así") y que entre como
   ejemplo en una versión nueva

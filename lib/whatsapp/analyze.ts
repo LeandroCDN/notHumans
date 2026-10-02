@@ -1,4 +1,5 @@
 import type { ParsedChat } from "./parse";
+import { VOICE_PREFIX } from "./voice";
 
 export type Role = "owner" | "client";
 
@@ -155,11 +156,13 @@ export function summarize(conversations: Conversation[]): Summary {
   let clientMessages = 0;
   let words = 0;
   let laughs = 0;
+  let written = 0;
 
   for (const conv of conversations) {
     turns += conv.turns.length;
     conv.turns.forEach((turn, i) => {
-      const texts = turn.texts.filter((t) => t !== MEDIA_PLACEHOLDER);
+      // Las estadísticas son de cómo escribe: los audios transcriptos no cuentan.
+      const texts = turn.texts.filter((t) => t !== MEDIA_PLACEHOLDER && !t.startsWith(VOICE_PREFIX));
       if (turn.role === "client") {
         clientMessages += turn.texts.length;
         if (conv.turns[i + 1]?.role === "owner") pairs++;
@@ -169,6 +172,7 @@ export function summarize(conversations: Conversation[]): Summary {
       hours[new Date(turn.ts).getHours()]++;
       const opener = texts[0]?.toLowerCase().match(/^[\p{L}]+/u)?.[0];
       if (opener) openers.set(opener, (openers.get(opener) ?? 0) + 1);
+      written += texts.length;
       for (const t of texts) {
         words += t.split(/\s+/).filter(Boolean).length;
         if (LAUGH.test(t)) laughs++;
@@ -177,7 +181,8 @@ export function summarize(conversations: Conversation[]): Summary {
     });
   }
 
-  const textMessages = Math.max(1, ownerMessages);
+  // Promedios sobre los mensajes escritos (sin multimedia ni audios).
+  const textMessages = Math.max(1, written);
   const peak = Math.max(...hours);
   return {
     conversations: conversations.length,

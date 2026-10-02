@@ -159,7 +159,7 @@ const en = {
     titleA: "Bring a",
     titleB: "notHuman to life.",
     intro:
-      "Start with the chats: that's where the way it talks comes from. The chats are read in your browser and only go to the AI to learn the style: what gets saved is the personality, never the chats.",
+      "Start with the chats: that's where the way it talks comes from. The chats are read in your browser and only go to the AI to learn the style (voice notes are transcribed with Groq): what gets saved is the personality, never the chats.",
     sections: {
       chats: "The chats",
       understood: "What we understood",
@@ -171,8 +171,30 @@ const en = {
     tryWith: "or try it with:",
     samples: { martina: "Martina · clothing", tano: "El Tano · hardware store", emma: "Emma · clothing (EN)" },
     howTo: "how do I export a chat?",
-    howToIos: "Open the chat → tap the name at the top → Export Chat → Without Media. You'll get a .zip.",
-    howToAndroid: "Open the chat → ⋮ → More → Export chat → Without media. You'll get a .txt.",
+    howToIos:
+      "Open the chat → tap the name at the top → Export Chat → Attach Media (to include voice notes) or Without Media. You'll get a .zip.",
+    howToAndroid:
+      "Open the chat → ⋮ → More → Export chat → Include media (to include voice notes) or Without media. You'll get a .zip or a .txt.",
+    voice: {
+      found: (n: number, min: number) => `${n} voice ${n === 1 ? "note" : "notes"} · ~${min} min`,
+      why: "Transcribe them so it also learns how they talk in audios: words, expressions, how they explain and sell.",
+      cta: "🎤 Transcribe",
+      retry: (n: number) => `Transcribe the ${n} left`,
+      progress: (done: number, total: number) => `${done} of ${total} transcribed`,
+      waiting: "Groq asked us to wait a moment (free plan limit)…",
+      allDone: (n: number) => `${n} voice ${n === 1 ? "note" : "notes"} transcribed`,
+      allDoneSub: "They're now part of the conversations, marked with 🎤.",
+      summary: (min: number) => `~${min} min of audio`,
+      failed: (n: number) => `${n} couldn't be transcribed`,
+      onlyMissing: (n: number) =>
+        `These chats mention ${n} voice ${n === 1 ? "note" : "notes"}, but they were exported without media. Export them again with media to transcribe them.`,
+      someMissing: (n: number) => `${n} more mentioned in the chats didn't come in the file.`,
+      errors: {
+        missing_stt_key: "GROQ_API_KEY isn't set on the server. Add it in Vercel → Settings → Environment Variables and redeploy.",
+        unauthorized: "Your session expired. Log in again.",
+        generic: (detail: string) => `Couldn't transcribe: ${detail}`,
+      },
+    },
     noPairs: (owner: string) => `We couldn't find chats where a customer asks and ${owner} replies. Did you pick the right name?`,
     openError: "We couldn't open this file",
     media: "📎 media",
@@ -485,7 +507,7 @@ const es: Dict = {
     titleA: "Dale vida a un",
     titleB: "notHuman.",
     intro:
-      "Empezá por los chats: de ahí sale cómo habla. Los chats se leen en tu navegador y solo pasan por la IA para aprender el estilo: se guarda la personalidad, nunca los chats.",
+      "Empezá por los chats: de ahí sale cómo habla. Los chats se leen en tu navegador y solo pasan por la IA para aprender el estilo (los audios se transcriben con Groq): se guarda la personalidad, nunca los chats.",
     sections: {
       chats: "Los chats",
       understood: "Lo que entendimos",
@@ -497,8 +519,30 @@ const es: Dict = {
     tryWith: "o probá con:",
     samples: { martina: "Martina · ropa", tano: "El Tano · ferretería", emma: "Emma · ropa (inglés)" },
     howTo: "¿cómo exporto un chat?",
-    howToIos: "Abrí el chat → tocá el nombre arriba → Exportar chat → Sin archivos. Te queda un .zip.",
-    howToAndroid: "Abrí el chat → ⋮ → Más → Exportar chat → Sin archivos. Te queda un .txt.",
+    howToIos:
+      "Abrí el chat → tocá el nombre arriba → Exportar chat → Adjuntar archivos (para sumar los audios) o Sin archivos. Te queda un .zip.",
+    howToAndroid:
+      "Abrí el chat → ⋮ → Más → Exportar chat → Incluir archivos (para sumar los audios) o Sin archivos. Te queda un .zip o un .txt.",
+    voice: {
+      found: (n, min) => `${n} ${n === 1 ? "nota de voz" : "notas de voz"} · ~${min} min`,
+      why: "Transcribilas para que aprenda también cómo habla en los audios: palabras, expresiones, cómo explica y vende.",
+      cta: "🎤 Transcribir",
+      retry: (n) => `Transcribir las ${n} que faltan`,
+      progress: (done, total) => `${done} de ${total} transcriptas`,
+      waiting: "Groq pidió esperar un momento (límite del plan gratis)…",
+      allDone: (n) => `${n} ${n === 1 ? "nota de voz transcripta" : "notas de voz transcriptas"}`,
+      allDoneSub: "Ya son parte de las conversaciones, marcadas con 🎤.",
+      summary: (min) => `~${min} min de audio`,
+      failed: (n) => `${n} no se pudieron transcribir`,
+      onlyMissing: (n) =>
+        `Estos chats mencionan ${n} ${n === 1 ? "audio" : "audios"}, pero se exportaron sin archivos. Exportalos de nuevo con archivos para transcribirlos.`,
+      someMissing: (n) => `Hay ${n} más mencionados en los chats que no vinieron en el archivo.`,
+      errors: {
+        missing_stt_key: "GROQ_API_KEY no está configurada en el servidor. Cargala en Vercel → Settings → Environment Variables y redeployá.",
+        unauthorized: "Se venció la sesión. Volvé a entrar.",
+        generic: (detail) => `No se pudo transcribir: ${detail}`,
+      },
+    },
     noPairs: (owner) => `No encontramos charlas donde un cliente pregunte y ${owner} responda. ¿Elegiste bien tu nombre?`,
     openError: "No pudimos abrir este archivo",
     media: "📎 multimedia",

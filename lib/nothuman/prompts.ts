@@ -47,6 +47,9 @@ Rules for "examples":
   Example: "pasá por Rawson 2167 pb o llamame al +1 (415) 645-3335" -> "pasá por {address} o llamame al {phone}".
 - Do NOT replace style: greetings, nicknames ("hermosa", "maestro", "genio"), slang, emojis, laughs.
 - Ignore lines that say "(media)".
+- Lines starting with 🎤 are voice notes, transcribed automatically. Use them in "styleNotes" (vocabulary, expressions,
+  how they explain and sell, and that they send audios), but never as an example "reply": the AI will write, not talk,
+  and the transcriber added its own punctuation. A client's voice note can be the "context" of an example (drop the 🎤).
 
 Rules for "styleNotes":
 - 3 to 8 concrete observations about the owner's style seen in this batch: tone, register (voseo/tuteo/usted, formal/informal), message length, whether they split answers into several messages, capitalization, punctuation, emojis, laughs, greetings, sign-offs, catchphrases, how they give prices and close sales, how they handle complaints.

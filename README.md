@@ -20,11 +20,12 @@ npm run dev
 | `DEEPSEEK_MODEL` | Opcional: modelo de la generación (default `deepseek-flash`) |
 | `SUPABASE_URL` | URL del proyecto de Supabase |
 | `SUPABASE_SECRET_KEY` | Secret key de Supabase (solo server). Sin Supabase, en desarrollo se guarda en memoria |
+| `GROQ_API_KEY` | Key de Groq para transcribir notas de voz (Whisper) |
 | `LLM_MOCK=1` | Opcional: respuestas simuladas para desarrollar sin key |
 
 ## Cómo funciona
 
-1. **Crear:** subís exports de WhatsApp (o probás con los sets de `public/samples/`). El parser arma conversaciones y turnos en el navegador.
+1. **Crear:** subís exports de WhatsApp (o probás con los sets de `public/samples/`). El parser arma conversaciones y turnos en el navegador. Si el `.zip` se exportó con archivos, las notas de voz se transcriben con Groq Whisper (`/api/transcribe`) y entran a las conversaciones marcadas con 🎤.
 2. **Generar:** las conversaciones van a DeepSeek por bloques (`/api/generate/extract`): salen ejemplos con marcadores (`{price}`, `{product}`…) y notas de estilo. Después `/api/generate/profile` arma el perfil.
 3. **Explorar:** los notHumans se guardan en Supabase (`/api/nothumans`, migraciones en `supabase/migrations/`) con versiones; se pueden descargar e importar como JSON.
 4. **Test drive** (`/app/chat`): chateás como cliente con un notHuman. Elegís notHuman y modelo (Flash / V4 Pro, con o sin thinking) y ves tokens, caché y costo de cada respuesta. El prompt es fijo por notHuman (perfil + ejemplos canónicos) para que DeepSeek lo sirva desde caché; los modelos y precios están en `lib/llm/models.ts`.

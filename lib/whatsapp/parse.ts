@@ -15,6 +15,8 @@ export type ChatMessage = {
   author: string | null;
   text: string;
   kind: MessageKind;
+  /** Archivo adjunto que viene en el .zip cuando se exporta "con multimedia" (ej. PTT-20240610-WA0003.opus). */
+  attachment?: string;
 };
 
 export type ParsedChat = {
@@ -47,6 +49,9 @@ const MEDIA = [
   /^(ubicación|location): https?:\/\//i,
   /^(ubicación en tiempo real compartida|live location shared)/i,
 ];
+// Nombre del archivo en un adjunto: iOS "<adjunto: 00000012-AUDIO-….opus>", Android "PTT-….opus (archivo adjunto)".
+const ATTACHMENT = [/^<(?:adjunto|attached):\s*(.+?)\s*>$/i, /^(.+?)\s+\((?:archivo adjunto|file attached)\)$/i];
+
 const DELETED =
   /^(se eliminó este mensaje|este mensaje fue eliminado|eliminaste este mensaje|this message was deleted|you deleted this message)\.?$/i;
 const SYSTEM = [
@@ -124,11 +129,17 @@ function toTimestamp(r: RawMessage, order: DateOrder): number {
   return new Date(y, m - 1, d, h, r.mi, r.s).getTime();
 }
 
-export function classify(author: string | null, text: string): { kind: MessageKind; text: string } {
+export function classify(
+  author: string | null,
+  text: string,
+): { kind: MessageKind; text: string; attachment?: string } {
   const clean = text.replace(EDITED, "").trim();
   if (!author || SYSTEM.some((re) => re.test(clean))) return { kind: "system", text: clean };
   if (DELETED.test(clean)) return { kind: "deleted", text: clean };
-  if (MEDIA.some((re) => re.test(clean))) return { kind: "media", text: clean };
+  if (MEDIA.some((re) => re.test(clean))) {
+    const attachment = ATTACHMENT.map((re) => re.exec(clean)?.[1]).find(Boolean);
+    return attachment ? { kind: "media", text: clean, attachment } : { kind: "media", text: clean };
+  }
   return { kind: "text", text: clean };
 }
 
@@ -171,8 +182,10 @@ export function parseExport(content: string, fileName: string): ParsedChat {
   const language = detectLanguage(raw.map((r) => r.text));
   const dateOrder = detectDateOrder(raw, language);
   const messages: ChatMessage[] = raw.map((r) => {
-    const { kind, text } = classify(r.author, r.text.trim());
-    return { ts: toTimestamp(r, dateOrder), author: kind === "system" ? null : r.author, text, kind };
+    const { kind, text, attachment } = classify(r.author, r.text.trim());
+    const msg: ChatMessage = { ts: toTimestamp(r, dateOrder), author: kind === "system" ? null : r.author, text, kind };
+    if (attachment) msg.attachment = attachment;
+    return msg;
   });
 
   const counts = new Map<string, number>();

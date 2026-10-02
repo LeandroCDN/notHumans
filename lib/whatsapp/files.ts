@@ -1,18 +1,35 @@
 import { strFromU8, unzipSync } from "fflate";
+import { AUDIO_FILE } from "./voice";
 
-export type ChatFile = { name: string; text: string };
+export type ChatFile = {
+  name: string;
+  text: string;
+  /** Notas de voz que venían en el .zip, por nombre de archivo (solo si se exportó "con multimedia"). */
+  audios?: Record<string, Uint8Array>;
+};
 
-const decodeText = (bytes: Uint8Array) => strFromU8(bytes).replace(/^﻿/, "");
+const decodeText = (bytes: Uint8Array) => strFromU8(bytes).replace(/^\uFEFF/, "");
+const basename = (path: string) => path.split("/").pop()!;
 
-/** Saca los .txt de un .zip exportado por WhatsApp (iOS: _chat.txt; Android: "Chat de WhatsApp con X.txt"). */
+/**
+ * Saca los .txt de un .zip exportado por WhatsApp (iOS: _chat.txt; Android: "Chat de WhatsApp con X.txt")
+ * y las notas de voz. Fotos, videos y documentos ni se descomprimen.
+ */
 export function extractChatsFromZip(bytes: Uint8Array, zipName: string): ChatFile[] {
-  // El filtro evita descomprimir fotos y audios: solo nos interesan los .txt.
-  const entries = unzipSync(bytes, { filter: (f) => /\.txt$/i.test(f.name) && !f.name.startsWith("__MACOSX") });
-  return Object.entries(entries).map(([name, data]) => ({
-    // "_chat.txt" no dice nada; mejor mostrar el nombre del zip.
-    name: /(^|\/)_chat\.txt$/i.test(name) ? zipName : name.split("/").pop()!,
-    text: decodeText(data),
-  }));
+  const entries = unzipSync(bytes, {
+    filter: (f) => !f.name.startsWith("__MACOSX") && (/\.txt$/i.test(f.name) || AUDIO_FILE.test(f.name)),
+  });
+  const audios: Record<string, Uint8Array> = {};
+  for (const [name, data] of Object.entries(entries)) if (AUDIO_FILE.test(name)) audios[basename(name)] = data;
+  const hasAudios = Object.keys(audios).length > 0;
+  return Object.entries(entries)
+    .filter(([name]) => /\.txt$/i.test(name))
+    .map(([name, data]) => ({
+      // "_chat.txt" no dice nada; mejor mostrar el nombre del zip.
+      name: /(^|\/)_chat\.txt$/i.test(name) ? zipName : basename(name),
+      text: decodeText(data),
+      ...(hasAudios ? { audios } : {}),
+    }));
 }
 
 /** Lee los archivos que soltó el usuario (.txt o .zip) y devuelve los textos de chat. */
