@@ -44,6 +44,25 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 - [ ] Elegir el tope de respuestas al crear el link (hoy 300) y ver las charlas que tuvo la gente
 - [ ] Con el "puesto de trabajo" y los datos de prueba, que el link muestre datos en vez de {price}
 
+## Nota: legal y datos personales (antes de conectar el primer negocio real)
+> No es asesoramiento legal: hacer una consulta con un abogado de datos personales antes de tener clientes.
+
+- **Guardar charlas de WhatsApp (API oficial) es normal**, con condiciones (Ley 25.326 y términos de Meta):
+  política de privacidad que diga que se guardan y se procesan con IA (y con qué proveedores), usarlas solo para
+  atender, acceso restringido, borrado automático, poder mostrar/borrar los datos de un cliente si lo pide, y
+  ver si hay que inscribir la base ante la AAIP.
+- **Transferencia internacional**: DeepSeek procesa en China; la ley restringe mandar datos personales a países
+  sin "protección adecuada" (salvo consentimiento o contratos). Puede pedir otro proveedor de IA en producción.
+- **Chats subidos para crear un notHuman**: tienen mensajes de terceros (los clientes del dueño). Hoy no guardamos
+  los chats crudos (solo estilo + ejemplos con marcadores y `findLeak`), pero pasan por DeepSeek al generar:
+  que el dueño lo tenga cubierto en sus términos.
+- **Avisar que es una IA**: en Argentina no hay ley específica, pero la ley del consumidor pide información veraz
+  y en la UE ya es obligatorio. El link público ya lo aclara; en WhatsApp también.
+- **Sin API oficial** (WhatsApp Web con QR): no es delito, pero viola los términos de Meta (riesgo de ban).
+- **Clonar voz**: solo con consentimiento explícito y por escrito.
+- Antes del primer negocio real: términos + política de privacidad, borrado automático de charlas, y decidir
+  qué proveedor de IA usar con datos de clientes.
+
 ## Ideas sueltas
 - [x] Entrenar desde el chat: corregir una respuesta en el test drive ("ella lo diría así") y que entre como
   ejemplo en una versión nueva
