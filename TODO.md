@@ -10,8 +10,9 @@
 
 ## Orden acordado
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
-2. [ ] Puestos: crear (contame el laburo → la IA ordena; reglas, horario, pasar a una persona; catálogo desde
-   Excel/CSV con columnas visibles/privadas, el notHuman busca en vez de leer todo). Se asigna desde notHumans.
+2. [x] Puestos, entrega 1: crear (contame el laburo + audio → la IA ordena; reglas, horario, pasar a una persona),
+   asignar desde notHumans, chat y link público con el puesto ("usó: …")
+   [ ] Puestos, entrega 2: catálogo desde Excel/CSV con columnas visibles/privadas, el notHuman busca en vez de leer todo
 3. [ ] Conexiones: Google Sheets y Calendar con cuenta de servicio (solo lectura) + mail propio del puesto
 4. [ ] WhatsApp: API oficial (Cloud API), conversaciones guardadas por número de cliente, pasar a una persona
 

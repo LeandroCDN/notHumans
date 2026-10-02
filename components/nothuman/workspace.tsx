@@ -11,6 +11,8 @@ import { StoreError, refreshNotHumans, saveCorrections } from "@/lib/nothuman/st
 import { Bubble, Dots } from "../chat/bubbles";
 import { type ConvTurn, useConversation } from "../chat/use-conversation";
 import { useI18n } from "../i18n";
+import { useJobs } from "@/lib/job/store";
+import { JobTab } from "../job/job-tab";
 import { ProfileSide } from "./profile-side";
 import { WithPlaceholders } from "./profile-view";
 import { ShareButton } from "./share-link";
@@ -38,6 +40,8 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
   const { t: dict } = useI18n();
   const t = dict.chat;
   const th = dict.hub;
+  const { jobs } = useJobs();
+  const job = jobs?.find((j) => j.id === nh.jobId) ?? null;
 
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const [draft, setDraft] = useState("");
@@ -47,7 +51,7 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
 
   const conv = useConversation<ChatReply>(
     async (turns) => {
-      const reply = await sendChat(nh, turns, modelId);
+      const reply = await sendChat(nh, turns, modelId, job ? { name: job.name, content: job.content } : null);
       return { messages: reply.messages, meta: reply };
     },
     (err) => {
@@ -159,6 +163,7 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
             <div className={`animate-morph size-10 shrink-0 bg-gradient-to-br ${hue}`} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-serif text-2xl leading-none">{nh.name}</p>
+              <div className="mt-0.5 flex min-w-0 items-center gap-2">
               <AnimatePresence mode="wait">
                 <motion.p
                   key={typing ? "typing" : status}
@@ -170,6 +175,15 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
                   {typing ? t.typing : status === "waiting" ? t.waiting : t.online}
                 </motion.p>
               </AnimatePresence>
+              {job && (
+                <button
+                  onClick={() => onTab("job")}
+                  className="min-w-0 truncate rounded-full border border-acid/35 px-2 py-px font-mono text-[10px] text-acid transition hover:bg-acid/10"
+                >
+                  {dict.jobs.chip(job.name)}
+                </button>
+              )}
+              </div>
             </div>
             <label className="sr-only" htmlFor="nh-model">
               {t.model}
@@ -395,16 +409,7 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
               </>
             )}
             {tab === "profile" && <ProfileSide nh={nh} />}
-            {tab === "job" && (
-              <div className="rounded-[28px] border border-dashed border-white/15 p-6 text-center">
-                <p className="font-serif text-3xl leading-tight">{th.jobSoonTitle}</p>
-                <p className="mt-2 text-sm leading-relaxed text-white/55">{th.jobSoonBody}</p>
-                <span className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 font-mono text-[11px] text-white/40">
-                  <span className="size-1.5 animate-pulse rounded-full bg-violet" />
-                  {dict.common.soon}
-                </span>
-              </div>
-            )}
+            {tab === "job" && <JobTab nh={nh} />}
           </motion.div>
         </AnimatePresence>
       </aside>
@@ -479,6 +484,16 @@ function NhTurn({ turn, shown, owner, onCorrect }: NhTurnProps) {
           <span>
             {findModel(meta.modelId).label} · {t.perTurn((meta.ms / 1000).toFixed(1), nf(meta.usage.input), nf(meta.usage.cacheHit), nf(meta.usage.output), formatCost(meta.cost))}
           </span>
+          {meta.used && meta.used.length > 0 && (
+            <span className="flex flex-wrap items-center gap-1 text-acid/70">
+              {dict.jobs.used}
+              {meta.used.map((u) => (
+                <span key={u} className="rounded-full border border-acid/25 px-2 py-0.5">
+                  {u}
+                </span>
+              ))}
+            </span>
+          )}
           {meta.reasoning && (
             <button onClick={() => setOpen(!open)} className="text-violet-300 transition hover:text-violet-200">
               {open ? t.hideThinking : t.showThinking}

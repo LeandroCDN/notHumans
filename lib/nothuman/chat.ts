@@ -1,5 +1,6 @@
 "use client";
 
+import type { JobContent } from "@/lib/job/schema";
 import { GenerationError } from "./generate";
 import { chatPersona } from "./persona";
 import type { NotHuman, Usage } from "./schema";
@@ -16,13 +17,20 @@ export type ChatReply = {
   modelId: string;
   cost: number;
   ms: number;
+  /** Con puesto: qué partes del puesto usó. */
+  used?: string[];
 };
 
-export async function sendChat(nh: NotHuman, turns: ChatTurn[], modelId: string): Promise<ChatReply> {
+export async function sendChat(
+  nh: NotHuman,
+  turns: ChatTurn[],
+  modelId: string,
+  job?: { name: string; content: JobContent } | null,
+): Promise<ChatReply> {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ persona: chatPersona(nh), turns, modelId }),
+    body: JSON.stringify({ persona: chatPersona(nh), turns, modelId, job }),
   }).catch(() => null);
   if (!res) throw new GenerationError("generic", "network");
   const data = await res.json().catch(() => ({}));

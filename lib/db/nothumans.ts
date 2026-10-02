@@ -19,6 +19,8 @@ export type NotHumanRepo = {
   /** Crea el notHuman con su primera versión. Devuelve false si ese id ya existía. */
   create(nh: NotHuman, by: string): Promise<boolean>;
   remove(id: string): Promise<void>;
+  /** Le asigna un puesto al notHuman (o ninguno). Devuelve false si el notHuman no existe. */
+  setJob(id: string, jobId: string | null): Promise<boolean>;
   versions(id: string): Promise<VersionInfo[]>;
   getVersion(id: string, version: number): Promise<NotHuman | null>;
   /**
@@ -38,6 +40,7 @@ type Row = {
   profile: NotHuman["profile"];
   examples: NotHuman["examples"];
   stats: NotHuman["stats"];
+  job_id?: string | null;
 };
 
 const fromRow = (r: Row): NotHuman => ({
@@ -50,6 +53,7 @@ const fromRow = (r: Row): NotHuman => ({
   profile: r.profile,
   examples: r.examples,
   stats: r.stats,
+  jobId: r.job_id ?? null,
 });
 
 function supabaseRepo(db: SupabaseClient): NotHumanRepo {
@@ -96,6 +100,11 @@ function supabaseRepo(db: SupabaseClient): NotHumanRepo {
     async remove(id) {
       const { error } = await db.from("nothumans").delete().eq("id", id);
       if (error) throw fail("delete", error);
+    },
+    async setJob(id, jobId) {
+      const { data, error } = await db.from("nothumans").update({ job_id: jobId }).eq("id", id).select("id");
+      if (error) throw fail("set job", error);
+      return !!data?.length;
     },
     async versions(id) {
       const { data, error } = await db
@@ -159,12 +168,16 @@ function supabaseRepo(db: SupabaseClient): NotHumanRepo {
   };
 }
 
-type MemoryEntry = { current: number; versions: { nh: NotHuman; note: string; by: string; at: number }[] };
+type MemoryEntry = {
+  current: number;
+  jobId?: string | null;
+  versions: { nh: NotHuman; note: string; by: string; at: number }[];
+};
 
 function memoryRepo(): NotHumanRepo {
   const g = globalThis as unknown as { __nhMemory?: Map<string, MemoryEntry> };
   const items = (g.__nhMemory ??= new Map<string, MemoryEntry>());
-  const current = (e: MemoryEntry) => e.versions.find((v) => v.nh.version === e.current)!.nh;
+  const current = (e: MemoryEntry) => ({ ...e.versions.find((v) => v.nh.version === e.current)!.nh, jobId: e.jobId ?? null });
   return {
     async list() {
       return [...items.values()].map(current).sort((a, b) => b.createdAt - a.createdAt);
@@ -180,6 +193,12 @@ function memoryRepo(): NotHumanRepo {
     },
     async remove(id) {
       items.delete(id);
+    },
+    async setJob(id, jobId) {
+      const e = items.get(id);
+      if (!e) return false;
+      e.jobId = jobId;
+      return true;
     },
     async versions(id) {
       return (items.get(id)?.versions ?? [])

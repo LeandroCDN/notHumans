@@ -53,7 +53,11 @@ export function scheduleSummary(days: Day[], lang: "es" | "en"): string {
   });
   const joiner = lang === "es" ? " a " : " to ";
   return groups
-    .map((g) => `${g.from === g.to ? t.days[g.from] : t.days[g.from] + joiner + t.days[g.to].toLowerCase()} ${g.label}`)
+    // "Lunes a viernes" en castellano; "Monday to Friday" en inglés.
+    .map((g) => {
+      const last = lang === "es" ? t.days[g.to].toLowerCase() : t.days[g.to];
+      return `${g.from === g.to ? t.days[g.from] : t.days[g.from] + joiner + last} ${g.label}`;
+    })
     .join(" · ");
 }
 

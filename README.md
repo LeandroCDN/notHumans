@@ -33,6 +33,8 @@ npm run dev
 
 6. **Link público:** desde el perfil, "Crear link público" da un `/c/<token>` para que cualquiera chatee con el notHuman sin cuenta (con tope de respuestas por link y de mensajes por minuto). Se puede desactivar.
 
+7. **Puestos** (`/app/jobs`): dónde trabaja un notHuman. "Contame el laburo" (texto o audio) y la IA lo ordena en negocio, reglas, horario y cuándo pasar a una persona; el "manual del empleado" muestra lo que va a leer. Se asigna desde notHumans (pestaña Puesto) y el chat y el link público contestan con esas reglas.
+
 ## Tests
 
 ```bash

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { MissingKeyError } from "@/lib/llm";
 import { findModel } from "@/lib/llm/models";
+import { jobs } from "@/lib/db/jobs";
 import { notHumans } from "@/lib/db/nothumans";
 import { shares } from "@/lib/db/shares";
 import { chatPersona } from "@/lib/nothuman/persona";
@@ -53,7 +54,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     const nh = share && (await notHumans().get(share.nothumanId));
     if (!nh) return error("not_found", 404);
     if (!(await shares().use(token))) return error("limit", 429);
-    const reply = await replyAs(chatPersona(nh), parsed.data.turns, findModel(undefined));
+    // El puesto también sale de la base: el visitante no puede cambiar ni las reglas ni los datos.
+    const job = nh.jobId ? await jobs().get(nh.jobId) : null;
+    const reply = await replyAs(chatPersona(nh), parsed.data.turns, findModel(undefined), job);
     // Al público solo le llegan los mensajes: nada de costos, modelo ni razonamiento.
     return NextResponse.json({ messages: reply.messages });
   } catch (err) {

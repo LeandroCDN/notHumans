@@ -118,6 +118,8 @@ export type NotHuman = {
     usage: Usage;
     model: string;
   };
+  /** Puesto asignado (no es parte de la personalidad: cambiarlo no crea una versión nueva). */
+  jobId?: string | null;
 };
 
 const UsageSchema = z.object({ input: z.number(), cacheHit: z.number(), output: z.number() });

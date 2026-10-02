@@ -60,17 +60,49 @@ const MOCK_PROFILE = {
   doNots: ["(mock) No usa mayúsculas"],
 };
 
-function chatReply(user: string) {
-  if (/precio|cu[aá]nto|sale|price|how much/i.test(user)) {
+function chatReply(user: string, withJob: boolean) {
+  const ask = user.replace(/\n*\[[^\]]*\]\s*$/, "");
+  if (withJob) {
+    return {
+      messages: ["(mock) holaa! te cuento según el puesto 🙌", "envíos solo zona sur y llega al otro día", "te lo separo?"],
+      used: ["regla: envíos", "horario"],
+    };
+  }
+  if (/precio|cu[aá]nto|sale|price|how much/i.test(ask)) {
     return { messages: ["holaa 🙌", "sale {price}, y con transfe {discount} off", "te lo separo?"] };
   }
-  return { messages: ["(mock) holaa", `me dijiste "${user.slice(0, 60)}"`, "cualquier cosa me escribís 💛"] };
+  return { messages: ["(mock) holaa", `me dijiste "${ask.slice(0, 60)}"`, "cualquier cosa me escribís 💛"] };
+}
+
+/** "Contame el laburo" → un puesto: cada oración del texto pasa a ser una regla. */
+function jobFromBrief(brief: string) {
+  const sentences = brief
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim().replace(/[.!?]+$/, ""))
+    .filter(Boolean);
+  const kindOf = (s: string) => (/nunca|never|\bno\b/i.test(s) ? "never" : /siempre|always/i.test(s) ? "always" : "info");
+  return {
+    name: "(mock) " + (sentences[0] ?? "Mi negocio").split(/\s+/).slice(0, 4).join(" "),
+    business: { what: sentences[0] ?? "", sells: "", audience: "", where: "" },
+    rules: sentences.slice(1, 9).map((text) => ({ kind: kindOf(text), text })),
+    schedule: {
+      days: [0, 1, 2, 3, 4, 5, 6].map((i) => ({ open: i < 6, from: "08:00", to: i === 5 ? "13:00" : "18:00" })),
+      offHours: "(mock) contestá igual y avisá que se prepara el próximo día hábil",
+    },
+    handoff: { triggers: ["(mock) reclamos"], message: "(mock) dejame que lo consulto y te escribo" },
+  };
 }
 
 export async function mockJson<T>(req: JsonRequest<T>): Promise<JsonResponse<T>> {
   await sleep(400 + Math.random() * 600);
   const raw =
-    req.task === "extract" ? extractFromTranscript(req.user) : req.task === "chat" ? chatReply(req.user) : MOCK_PROFILE;
+    req.task === "extract"
+      ? extractFromTranscript(req.user)
+      : req.task === "chat"
+        ? chatReply(req.user, /## (Tu puesto|Your job):/.test(req.system))
+        : req.task === "job"
+          ? jobFromBrief(req.user)
+          : MOCK_PROFILE;
   const data = req.schema.parse(raw);
   // Simula la caché de prefijo: lo que ya se mandó en un request anterior (system + historial) sale de caché.
   const history = (req.history ?? []).reduce((n, t) => n + t.content.length, 0);

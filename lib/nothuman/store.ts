@@ -28,7 +28,8 @@ function emit() {
   window.dispatchEvent(new Event(EVENT));
 }
 
-async function call<T>(url: string, init?: RequestInit): Promise<T> {
+/** fetch a la API con los errores ya traducidos a StoreError. También lo usa el store de puestos. */
+export async function call<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...init, headers: { "content-type": "application/json" } }).catch(() => null);
   if (!res) throw new StoreError("generic", "network");
   const data = await res.json().catch(() => ({}));
@@ -145,6 +146,20 @@ export async function createShare(id: string): Promise<PublicShare> {
 
 export async function revokeShare(id: string): Promise<void> {
   await call(`/api/nothumans/${id}/share`, { method: "DELETE" });
+}
+
+/** Asigna un puesto al notHuman (o ninguno). No cambia su versión. */
+export async function assignJob(id: string, jobId: string | null): Promise<void> {
+  await call(`/api/nothumans/${id}/job`, { method: "PUT", body: JSON.stringify({ jobId }) });
+  cache = (cache ?? []).map((x) => (x.id === id ? { ...x, jobId } : x));
+  emit();
+}
+
+/** Cuando se borra un puesto, los notHumans que trabajaban ahí quedan sin puesto (también en la caché). */
+export function forgetJob(jobId: string) {
+  if (!cache?.some((x) => x.jobId === jobId)) return;
+  cache = cache.map((x) => (x.jobId === jobId ? { ...x, jobId: null } : x));
+  emit();
 }
 
 export async function deleteNotHuman(id: string) {

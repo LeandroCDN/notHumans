@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef } from "react";
 import type { NotHuman } from "@/lib/nothuman/schema";
+import { useJobs } from "@/lib/job/store";
 import { useLocalLeftovers, useNotHumans } from "@/lib/nothuman/store";
 import { ComingSoon } from "../coming-soon";
 import { useI18n } from "../i18n";
@@ -78,6 +79,8 @@ export function NotHumansHub({ initialId, initialTab }: { initialId?: string; in
 function Sidebar({ list, current, onPick }: { list: NotHuman[]; current?: string; onPick: (id: string) => void }) {
   const { t: dict } = useI18n();
   const t = dict.hub;
+  const { jobs } = useJobs();
+  const jobName = (id?: string | null) => (id ? jobs?.find((j) => j.id === id)?.name : undefined);
   return (
     <aside className="flex shrink-0 flex-col gap-2 lg:sticky lg:top-4 lg:w-[230px]">
       <p className="hidden px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40 lg:block">{t.listTitle}</p>
@@ -101,7 +104,7 @@ function Sidebar({ list, current, onPick }: { list: NotHuman[]; current?: string
               <span className="min-w-0">
                 <span className="block truncate font-medium">{x.name}</span>
                 <span className="block truncate font-mono text-[10px] text-white/40">
-                  v{x.version} · {x.examples.length} {dict.generate.examples}
+                  v{x.version} · {jobName(x.jobId) ?? `${x.examples.length} ${dict.generate.examples}`}
                 </span>
               </span>
             </motion.button>

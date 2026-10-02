@@ -42,8 +42,15 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   notHumans fusiona Explorar + test drive + perfil: lista a la izquierda (`explore-view.tsx`), chat en el centro y
   panel con pestañas Chat/Perfil/Puesto (`workspace.tsx`, `profile-side.tsx`); estado en la URL
   (`?nh=…&tab=chat|profile|job`). `/app/chat` y `/app/n/<id>` redirigen ahí.
-- Puestos (lo próximo): **Crear puesto solo crea el puesto**; se le asigna a un notHuman desde la sección notHumans
-  (pestaña Puesto). Mockup aprobado: https://claude.ai/artifact/V7fHFE24RBU8c8mmFAPWw2
+- Puestos (`/app/jobs`, `lib/job/`, `components/job/`): **crear un puesto solo crea el puesto**; se le asigna a un
+  notHuman desde notHumans (pestaña Puesto, guarda `nothumans.job_id`, no crea versión de la personalidad).
+  Tablas `jobs` + `job_versions` + vista `jobs_current` (contenido en jsonb validado por `JobContentSchema`).
+  "Contame el laburo" (texto o audio → `/api/transcribe`) → `/api/jobs/structure` lo ordena con IA en negocio,
+  reglas (siempre/nunca/dato), horario semanal y pasar a una persona. `jobManual()` arma el "manual del empleado":
+  con puesto reemplaza al negocio de los chats en el prompt, sus reglas mandan sobre el estilo, y la hora del
+  negocio va pegada al último mensaje (`nowNote`, para no romper la caché). La respuesta trae `used` ("usó: …").
+  El link público arma el puesto desde la base. Mockup: https://claude.ai/artifact/V7fHFE24RBU8c8mmFAPWw2
+- Lista de espera de la home: tabla `waitlist` (`/api/waitlist`, público, con trampa para bots y límite por IP).
 - localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 
 ## Estado y próximos pasos
@@ -60,4 +67,5 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 7. ✅ Notas de voz: transcripción de audios del .zip con Groq Whisper
 8. ✅ Link público para chatear con un notHuman sin cuenta
 9. ✅ Sección notHumans: Explorar + test drive + perfil en una sola vista
-10. ⏭️ Puestos (crear, catálogo con columnas visibles/privadas, asignar desde notHumans) y lo demás de `TODO.md`
+10. ✅ Puestos, entrega 1: crear/editar (contame el laburo + audio, IA que ordena), asignar, chat y link con puesto
+11. ⏭️ Puestos, entrega 2: catálogo desde Excel/CSV con columnas visibles/privadas y búsqueda; después `TODO.md`

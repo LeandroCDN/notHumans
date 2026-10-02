@@ -1,5 +1,6 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { JobsView } from "@/components/job/jobs-view";
 
-export default function JobsPage() {
-  return <ComingSoon section="jobs" />;
+export default async function JobsPage({ searchParams }: { searchParams: Promise<{ job?: string }> }) {
+  const { job } = await searchParams;
+  return <JobsView selected={job} />;
 }

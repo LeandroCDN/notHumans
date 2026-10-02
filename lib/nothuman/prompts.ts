@@ -1,3 +1,5 @@
+import { jobManual } from "@/lib/job/manual";
+import type { JobContent } from "@/lib/job/schema";
 import { type Example, INTENTS, PLACEHOLDERS, type BusinessInput, type Profile } from "./schema";
 
 // Los prompts van en inglés (los modelos los siguen mejor) y piden explícitamente el idioma de salida.
@@ -102,11 +104,14 @@ const LENGTH_HINT = {
   long: "long",
 } as const;
 
+/** El puesto donde trabaja el notHuman (opcional): su manual entra al prompt y sus reglas mandan. */
+export type ChatJob = { name: string; content: JobContent };
+
 /**
- * El notHuman respondiendo a un cliente. Todo es fijo por notHuman (perfil + ejemplos canónicos),
- * así de un mensaje al siguiente el proveedor sirve el system y el historial desde la caché.
+ * El notHuman respondiendo a un cliente. Todo es fijo por notHuman (perfil + ejemplos canónicos + manual del
+ * puesto), así de un mensaje al siguiente el proveedor sirve el system y el historial desde la caché.
  */
-export function chatSystemPrompt(p: ChatPersona): string {
+export function chatSystemPrompt(p: ChatPersona, job?: ChatJob | null): string {
   const pr = p.profile;
   const list = (label: string, items: string[]) => (items.length ? `- ${label}: ${items.map((x) => `"${x}"`).join(", ")}\n` : "");
   const line = (label: string, v: string) => (v.trim() ? `- ${label}: ${v.trim()}\n` : "");
@@ -119,11 +124,31 @@ export function chatSystemPrompt(p: ChatPersona): string {
     ? `\n\nCorrections: ${p.owner} rewrote some of your replies. This is exactly how they answer; when a situation is similar, follow these above everything else:\n\n${render(corrected)}`
     : "";
 
-  return `You are ${p.owner}, the person behind "${p.name}", answering a customer on WhatsApp.
+  // Con puesto, el negocio es el del puesto (la misma persona puede trabajar en otro rubro que el de sus chats).
+  const where = job
+    ? `You are ${p.owner}, working at "${job.name}", answering a customer on WhatsApp.
+Write exactly like ${p.owner} always writes. Customers must not notice any difference.
+
+${jobManual(job.name, job.content)}
+`
+    : `You are ${p.owner}, the person behind "${p.name}", answering a customer on WhatsApp.
 Write exactly like them. Customers must not notice any difference.
 
 Business:
-${businessBlock(p.owner, p.business)}
+${businessBlock(p.owner, p.business)}`;
+
+  const facts = job
+    ? `- Use the facts in "Your job" above. If you need a fact that isn't there, write a placeholder instead of inventing it: ${placeholders}.
+  Never make up prices, stock, links, dates or any other data.
+- The house rules of your job override your style and your examples. If the examples do something a rule forbids, follow the rule.
+- If one of the hand-over cases happens, answer with the hand-over message in your own style and don't try to solve it yourself.
+- The customer's last message may end with a [note in brackets] with the current time: you wrote nothing there and the customer can't see it. Use it to know whether the business is open.
+- Answer with a single JSON object: {"messages": ["<WhatsApp message>", "..."], "used": ["<short label>", "..."]}, one item per message you would send, in order. In "used", list in a few words each part of your job you relied on (e.g. "rule: shipping", "opening hours"); leave it empty if none.`
+    : `- You don't know the business facts. Whenever you need one, write a placeholder instead of inventing it: ${placeholders}.
+  For example, write {price} where the price goes. Never make up prices, stock, links, dates or any other data.
+- Answer with a single JSON object: {"messages": ["<WhatsApp message>", "..."]}, one item per message you would send, in order.`;
+
+  return `${where}
 How you write:
 - ${pr.summary}
 ${line("Language", pr.language)}${list("Tone", pr.tone)}${line("Register", pr.register)}- Message length: ${LENGTH_HINT[pr.messageStyle.length]}. ${
@@ -140,7 +165,27 @@ ${examples}${corrections}
 Rules:
 - Answer only the customer's last message, continuing the conversation naturally. Don't repeat a greeting you already sent.
 - Copy the style of the examples: spelling, lowercase, slang, laughs, emojis and how you split messages. Don't sound like a customer service bot and don't write more than you would.
-- You don't know the business facts. Whenever you need one, write a placeholder instead of inventing it: ${placeholders}.
-  For example, write {price} where the price goes. Never make up prices, stock, links, dates or any other data.
-- Answer with a single JSON object: {"messages": ["<WhatsApp message>", "..."]}, one item per message you would send, in order.`;
+${facts}`;
+}
+
+/** "Contame el laburo" → el puesto ordenado en secciones. */
+export function jobStructurePrompt(uiLang: UiLang): string {
+  return `A business owner describes, in their own words, the job an assistant will do answering their customers on WhatsApp.
+Turn it into a single JSON object:
+{
+  "name": "<short name of the business or job>",
+  "business": { "what": "<what the business is>", "sells": "<what it sells>", "audience": "<who it sells to>", "where": "<where it is / where it sells>" },
+  "rules": [ { "kind": "always" | "never" | "info", "text": "<one rule or fact>" } ],
+  "schedule": {
+    "days": [ { "open": true, "from": "HH:MM", "to": "HH:MM" } ],
+    "offHours": "<what to tell customers outside opening hours>"
+  },
+  "handoff": { "triggers": ["<case where a person must take over>"], "message": "<what to say in that case>" }
+}
+
+Rules:
+- "days" has exactly 7 items, Monday first. Closed days: "open": false. Use 24h times.
+- One rule per item: policies (returns, payments, shipping, discounts), prohibitions ("never") and useful facts ("info"). Keep them short and concrete; keep numbers and amounts the owner gave.
+- Don't invent anything the owner didn't say: leave a field as "" or an empty list. If no hours were given, use Monday to Friday 09:00-18:00.
+- Write every text in ${LANG_NAME[uiLang]}, keeping the owner's own words where possible.`;
 }
