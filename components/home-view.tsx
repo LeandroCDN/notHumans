@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValueEvent, useScroll } from "motion/react";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 import { Backdrop } from "./backdrop";
 import { HeroChat } from "./hero-chat";
@@ -186,7 +186,6 @@ function Marquee() {
 }
 
 function Finale() {
-  const { request } = useLogin();
   const { t } = useI18n();
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-36 text-center sm:px-10">
@@ -215,16 +214,115 @@ function Finale() {
         transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 16 }}
         className="mt-12"
       >
-        <Magnetic strength={0.4}>
-          <button
-            onClick={(e) => request(e)}
-            className="group relative flex size-40 items-center justify-center rounded-full bg-bone text-lg font-medium text-ink transition-colors hover:bg-acid sm:size-48"
-          >
-            <span className="absolute inset-0 animate-ping rounded-full bg-acid/20 [animation-duration:2.5s]" />
-            <span className="relative">{t.home.finaleCta}</span>
-          </button>
-        </Magnetic>
+        <Waitlist />
       </motion.div>
     </section>
+  );
+}
+
+/** El último botón de la home: un círculo que se abre en un campo de mail para anotarse en la lista de espera. */
+function Waitlist() {
+  const { t, locale } = useI18n();
+  const w = t.home.waitlist;
+  const [state, setState] = useState<"idle" | "form" | "sending" | "done">("idle");
+  const [email, setEmail] = useState("");
+  const [trap, setTrap] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setState("sending");
+    setError(null);
+    const res = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, locale, website: trap }),
+    }).catch(() => null);
+    if (res?.ok) return setState("done");
+    const data = res ? await res.json().catch(() => ({})) : {};
+    setError(data.error === "invalid_email" ? w.invalid : data.error === "too_fast" ? w.tooFast : w.error);
+    setState("form");
+  }
+
+  return (
+    <div className="flex min-h-48 items-center justify-center">
+      <AnimatePresence mode="wait">
+        {state === "idle" && (
+          <motion.div key="idle" exit={{ opacity: 0, scale: 0.6 }} transition={{ duration: 0.25 }}>
+            <Magnetic strength={0.4}>
+              <button
+                onClick={() => setState("form")}
+                className="group relative flex size-40 items-center justify-center rounded-full bg-bone px-6 text-lg font-medium leading-tight text-ink transition-colors hover:bg-acid sm:size-48"
+              >
+                <span className="absolute inset-0 animate-ping rounded-full bg-acid/20 [animation-duration:2.5s]" />
+                <span className="relative">{w.cta}</span>
+              </button>
+            </Magnetic>
+          </motion.div>
+        )}
+
+        {(state === "form" || state === "sending") && (
+          <motion.form
+            key="form"
+            onSubmit={submit}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="w-full max-w-lg"
+          >
+            <div className="flex items-center gap-2 rounded-full border border-acid/40 bg-white/[0.04] p-2 shadow-[0_0_80px_-20px_rgba(198,255,61,0.5)] backdrop-blur-md">
+              <label htmlFor="waitlist-email" className="sr-only">
+                {w.label}
+              </label>
+              <input
+                id="waitlist-email"
+                type="email"
+                required
+                autoFocus
+                autoComplete="email"
+                maxLength={254}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={w.placeholder}
+                className="min-w-0 flex-1 bg-transparent px-4 py-3 text-lg text-bone outline-none placeholder:text-white/30"
+              />
+              {/* Trampa para bots: invisible para las personas. */}
+              <input
+                tabIndex={-1}
+                aria-hidden="true"
+                autoComplete="off"
+                value={trap}
+                onChange={(e) => setTrap(e.target.value)}
+                className="absolute -left-[9999px] size-px opacity-0"
+                name="website"
+              />
+              <button
+                type="submit"
+                disabled={state === "sending"}
+                className="shrink-0 rounded-full bg-acid px-6 py-3 font-medium text-ink transition hover:scale-[1.03] disabled:opacity-50"
+              >
+                {state === "sending" ? "…" : w.send}
+              </button>
+            </div>
+            <p className={`mt-4 text-sm ${error ? "text-rose" : "text-white/40"}`}>{error ?? w.note}</p>
+          </motion.form>
+        )}
+
+        {state === "done" && (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, scale: 0.8, filter: "blur(8px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            transition={{ type: "spring", stiffness: 200, damping: 18 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <span className="flex size-20 items-center justify-center rounded-full bg-acid text-3xl text-ink">✓</span>
+            <p className="font-serif text-3xl sm:text-4xl">{w.doneTitle}</p>
+            <p className="max-w-md text-white/55">{w.doneBody}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
