@@ -10,6 +10,7 @@ import { ComingSoon } from "../coming-soon";
 import { useI18n } from "../i18n";
 import { ProfileView } from "./profile-view";
 import { ImportJsonButton, LeftoversBanner, StoreErrorNotice } from "./store-ui";
+import { VersionHistory } from "./version-history";
 
 const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
 
@@ -129,6 +130,7 @@ function Detail({ nh }: { nh: NotHuman }) {
         </button>
       </div>
       {deleteError && <StoreErrorNotice error={deleteError} reload={() => setDeleteError(null)} />}
+      <VersionHistory nh={nh} />
       <ProfileView nh={nh} />
     </div>
   );

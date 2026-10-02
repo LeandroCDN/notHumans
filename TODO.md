@@ -6,7 +6,7 @@
 - [x] Variables en Vercel: `SUPABASE_URL` y `SUPABASE_SECRET_KEY` (solo server, nunca al navegador)
 - [x] `lib/nothuman/store.ts` pasa a llamar a la API (`/api/nothumans`) en vez de localStorage
 - [x] Botón para subir los notHumans que quedaron en localStorage, e "Importar JSON"
-- [ ] Cada cambio de perfil/ejemplos crea una versión nueva (v1, v2…) y se puede volver atrás
+- [x] Cada cambio de perfil/ejemplos crea una versión nueva (v1, v2…) y se puede volver atrás
 
 ## Después: el puesto de trabajo
 La idea: el notHuman es **cómo habla**; el puesto es **dónde trabaja y con qué reglas**. Separados, la misma
@@ -28,6 +28,9 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
   integración directa o que lo mande el negocio por la API
 
 ## Ideas sueltas
-- [ ] Entrenar desde el chat: corregir una respuesta en el test drive ("ella lo diría así") y que entre como
+- [x] Entrenar desde el chat: corregir una respuesta en el test drive ("ella lo diría así") y que entre como
   ejemplo en una versión nueva
+- [ ] Ponerle intención a las correcciones (hoy entran como "other")
+- [ ] Limpiar NotLean (direcciones y un teléfono que se colaron antes del filtro nuevo)
+- [ ] "image omitted" pegado a un texto se cuela en los ejemplos (el parser solo lo detecta en un mensaje solo)
 - [ ] Traer ejemplos relevantes (no solo los canónicos) según lo que pregunta el cliente

@@ -99,6 +99,9 @@ export const BusinessSchema = z.object({
 });
 export type BusinessInput = z.infer<typeof BusinessSchema>;
 
+/** Un ejemplo guardado. `corrected`: lo escribió una persona corrigiendo al notHuman desde el chat. */
+export type StoredExample = Example & { canonical: boolean; corrected?: boolean };
+
 export type NotHuman = {
   id: string;
   name: string;
@@ -107,7 +110,7 @@ export type NotHuman = {
   version: number;
   business: BusinessInput;
   profile: Profile;
-  examples: (Example & { canonical: boolean })[];
+  examples: StoredExample[];
   stats: {
     conversations: number;
     examplesFound: number;
@@ -128,7 +131,7 @@ export const NotHumanSchema = z.object({
   version: z.number().int().min(1),
   business: BusinessSchema,
   profile: ProfileSchema,
-  examples: z.array(ExampleSchema.extend({ canonical: z.boolean() })).max(2000),
+  examples: z.array(ExampleSchema.extend({ canonical: z.boolean(), corrected: z.boolean().optional() })).max(2000),
   stats: z.object({
     conversations: z.number(),
     examplesFound: z.number(),

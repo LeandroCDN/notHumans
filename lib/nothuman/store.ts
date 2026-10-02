@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type NotHuman, NotHumanSchema } from "./schema";
+import { type Example, type NotHuman, NotHumanSchema } from "./schema";
+import type { VersionInfo } from "./versions";
 
 // Los notHumans viven en Supabase, detrás de /api/nothumans. Acá hay una caché en memoria compartida
 // por todas las pantallas, para no pedir la lista de nuevo en cada navegación.
@@ -12,7 +13,7 @@ const EVENT = "nh-store-change";
 
 export class StoreError extends Error {
   constructor(
-    public code: "storage_not_configured" | "unauthorized" | "generic",
+    public code: "storage_not_configured" | "unauthorized" | "conflict" | "leak" | "generic",
     detail = "",
   ) {
     super(detail || code);
@@ -32,7 +33,10 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
   if (!res) throw new StoreError("generic", "network");
   const data = await res.json().catch(() => ({}));
   if (res.ok) return data as T;
-  if (data.error === "storage_not_configured" || data.error === "unauthorized") throw new StoreError(data.error);
+  if (data.error === "storage_not_configured" || data.error === "unauthorized" || data.error === "conflict") {
+    throw new StoreError(data.error);
+  }
+  if (data.error === "leak") throw new StoreError("leak", data.leak);
   throw new StoreError("generic", data.detail ?? `HTTP ${res.status}`);
 }
 
@@ -79,6 +83,52 @@ export async function saveNotHuman(n: NotHuman): Promise<boolean> {
     emit();
   }
   return r.created;
+}
+
+function replaceInCache(n: NotHuman) {
+  cache = (cache ?? []).map((x) => (x.id === n.id ? n : x));
+  emit();
+}
+
+/** Las respuestas corregidas desde el chat pasan a ser ejemplos fijos de una versión nueva. */
+export async function saveCorrections(id: string, base: number, corrections: Example[]): Promise<NotHuman> {
+  const n = await call<NotHuman>(`/api/nothumans/${id}/versions`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "corrections", base, corrections }),
+  });
+  replaceInCache(n);
+  return n;
+}
+
+/** Vuelve a una versión anterior (como versión nueva: el historial no se pierde). */
+export async function restoreVersion(id: string, base: number, version: number): Promise<NotHuman> {
+  const n = await call<NotHuman>(`/api/nothumans/${id}/versions`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "restore", base, version }),
+  });
+  replaceInCache(n);
+  return n;
+}
+
+/** Historial de versiones; se vuelve a pedir cuando cambia la versión vigente. */
+export function useVersions(id: string, current: number): VersionInfo[] | null {
+  const [state, setState] = useState<{ key: string; items: VersionInfo[] } | null>(null);
+  const key = `${id}:${current}`;
+  useEffect(() => {
+    let alive = true;
+    call<{ items: VersionInfo[] }>(`/api/nothumans/${id}/versions`)
+      .then((r) => alive && setState({ key, items: r.items }))
+      .catch(() => alive && setState({ key, items: [] }));
+    return () => {
+      alive = false;
+    };
+  }, [id, key]);
+  return state?.key === key ? state.items : null;
+}
+
+/** Recarga la lista desde el server (por ejemplo, después de un conflicto de versiones). */
+export function refreshNotHumans() {
+  void load(true);
 }
 
 export async function deleteNotHuman(id: string) {

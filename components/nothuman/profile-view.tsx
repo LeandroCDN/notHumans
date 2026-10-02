@@ -41,7 +41,9 @@ export function ProfileView({ nh }: { nh: NotHuman }) {
     nh.createdAt,
   );
   const fixed = nh.examples.filter((e) => e.canonical).length;
-  const examples = [...nh.examples].sort((a, b) => Number(b.canonical) - Number(a.canonical));
+  // Primero las correcciones, después los fijos, después el resto.
+  const rank = (e: NotHuman["examples"][number]) => (e.corrected ? 2 : e.canonical ? 1 : 0);
+  const examples = [...nh.examples].sort((a, b) => rank(b) - rank(a));
 
   const traits: { label: string; body: React.ReactNode; wide?: boolean }[] = [
     { label: t.tone, body: <Chips items={p.tone} /> },
@@ -115,7 +117,11 @@ export function ProfileView({ nh }: { nh: NotHuman }) {
             <div key={i} className="flex flex-col gap-1.5 rounded-3xl border border-white/10 bg-white/[0.02] p-4">
               <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-white/30">
                 <span>{e.intent.replace(/_/g, " ")}</span>
-                {e.canonical && <span className="text-acid">{t.fixed}</span>}
+                {e.corrected ? (
+                  <span className="text-violet-300">✎ {t.correctedTag}</span>
+                ) : (
+                  e.canonical && <span className="text-acid">{t.fixed}</span>
+                )}
               </div>
               <span className="max-w-[85%] self-start whitespace-pre-wrap rounded-2xl bg-white/[0.07] px-3.5 py-2 text-[15px] leading-snug">
                 <WithPlaceholders text={e.context} />

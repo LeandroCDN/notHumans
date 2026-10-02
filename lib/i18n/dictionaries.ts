@@ -119,11 +119,22 @@ const en = {
     localNote: "Saved in the cloud: you'll see them from any browser.",
     notFound: "This notHuman doesn't exist (or it was deleted).",
   },
+  versions: {
+    title: (n: number) => `${n} versions`,
+    generated: "generated from the chats",
+    corrections: (n: number) => (n === 1 ? "1 correction from the chat" : `${n} corrections from the chat`),
+    restored: (v: number) => `went back to v${v}`,
+    examples: (n: number) => `${n} examples`,
+    current: "current",
+    restore: "go back to this one",
+  },
   store: {
     errors: {
       storage_not_configured:
         "The database isn't set up on the server. Add SUPABASE_URL and SUPABASE_SECRET_KEY in Vercel → Settings → Environment Variables and redeploy.",
       unauthorized: "Your session expired. Log in again.",
+      conflict: "Someone saved another version in the meantime. Reload to see it before saving yours.",
+      leak: (what: string) => `There's real data in there (${what}). Use placeholders like {price} or {address}.`,
       generic: (detail: string) => `Couldn't reach the database: ${detail}`,
     },
     retry: "Try again",
@@ -265,6 +276,7 @@ const en = {
     examples: "Examples",
     examplesSub: (n: number, fixed: number) => `${n} examples · ${fixed} go fixed in every prompt`,
     fixed: "fixed",
+    correctedTag: "corrected",
     placeholderHint: "Highlighted words are placeholders: the real data comes from the business, not from the persona.",
     meta: (v: number, date: string) => `v${v} · created ${date}`,
     usage: (input: number, cache: number, output: number, model: string) =>
@@ -304,6 +316,23 @@ const en = {
     noneAccent: "yet.",
     noneBody: "Create a notHuman first, then come back to chat with it.",
     createCta: "Create a notHuman →",
+    correct: "✎ correct",
+    correctTitle: (owner: string) => `How would ${owner} say it?`,
+    correctHint: "One line per message. For business data use placeholders: {price} {product} {shipping_time}… · ⌘/Ctrl+Enter saves",
+    correctSave: "Save correction",
+    cancel: "Cancel",
+    corrected: "corrected · not saved yet",
+    correctedSaved: "corrected · saved",
+    showOriginal: "see what it said",
+    hideOriginal: "hide",
+    corrections: "Corrections",
+    pending: (n: number) => (n === 1 ? "1 correction to save" : `${n} corrections to save`),
+    saveVersion: (v: number) => `Save as v${v}`,
+    saving: "Saving…",
+    savedAs: (v: number) => `Saved as v${v}. It already answers with it.`,
+    correctionsHint: (name: string) =>
+      `Does a reply not sound like ${name}? Fix it with ✎ correct, then save a new version: it learns from it.`,
+    reload: "Reload",
   },
 };
 
@@ -416,11 +445,22 @@ const es: Dict = {
     localNote: "Guardados en la nube: los ves desde cualquier navegador.",
     notFound: "Este notHuman no existe (o lo borraron).",
   },
+  versions: {
+    title: (n) => `${n} versiones`,
+    generated: "generado a partir de los chats",
+    corrections: (n) => (n === 1 ? "1 corrección desde el chat" : `${n} correcciones desde el chat`),
+    restored: (v) => `volvió a la v${v}`,
+    examples: (n) => `${n} ejemplos`,
+    current: "vigente",
+    restore: "volver a esta",
+  },
   store: {
     errors: {
       storage_not_configured:
         "La base de datos no está configurada en el servidor. Cargá SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel → Settings → Environment Variables y redeployá.",
       unauthorized: "Se venció la sesión. Volvé a entrar.",
+      conflict: "Alguien guardó otra versión mientras tanto. Recargá para verla antes de guardar la tuya.",
+      leak: (what) => `Ahí hay un dato real (${what}). Usá marcadores como {price} o {address}.`,
       generic: (detail) => `No se pudo hablar con la base: ${detail}`,
     },
     retry: "Reintentar",
@@ -562,6 +602,7 @@ const es: Dict = {
     examples: "Ejemplos",
     examplesSub: (n, fixed) => `${n} ejemplos · ${fixed} van fijos en cada prompt`,
     fixed: "fijo",
+    correctedTag: "corregido",
     placeholderHint: "Lo resaltado son marcadores: el dato real sale del negocio, no de la persona.",
     meta: (v, date) => `v${v} · creado el ${date}`,
     usage: (input, cache, output, model) =>
@@ -600,6 +641,23 @@ const es: Dict = {
     noneAccent: "con quién hablar.",
     noneBody: "Primero creá un notHuman y después volvé a chatear con él.",
     createCta: "Crear un notHuman →",
+    correct: "✎ corregir",
+    correctTitle: (owner) => `¿Cómo lo diría ${owner}?`,
+    correctHint: "Una línea por mensaje. Para datos del negocio usá marcadores: {price} {product} {shipping_time}… · ⌘/Ctrl+Enter guarda",
+    correctSave: "Guardar corrección",
+    cancel: "Cancelar",
+    corrected: "corregido · sin guardar",
+    correctedSaved: "corregido · guardado",
+    showOriginal: "ver qué había dicho",
+    hideOriginal: "ocultar",
+    corrections: "Correcciones",
+    pending: (n) => (n === 1 ? "1 corrección para guardar" : `${n} correcciones para guardar`),
+    saveVersion: (v) => `Guardar como v${v}`,
+    saving: "Guardando…",
+    savedAs: (v) => `Guardado como v${v}. Ya responde con esto.`,
+    correctionsHint: (name) =>
+      `¿Una respuesta no suena a ${name}? Arreglala con ✎ corregir y guardá una versión nueva: aprende de eso.`,
+    reload: "Recargar",
   },
 };
 

@@ -36,4 +36,8 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 4. ✅ Test drive `/app/chat`: chat como cliente, selector de notHuman y de modelo, tokens/caché/costo por respuesta
    (modelos y precios en `lib/llm/models.ts`; el notHuman espera ~1,3 s por si el cliente manda varios mensajes)
 5. ✅ Supabase: guardar notHumans (v1), subir los que había en localStorage, importar JSON
-6. ⏭️ Versiones nuevas (editar / corregir desde el chat) y el "puesto de trabajo" (ver `TODO.md`)
+6. ✅ Corregir desde el chat: "✎ corregir" en el test drive → "Guardar como vN" crea una versión con esas
+   respuestas como ejemplos fijos (`corrected: true`, van en su propia sección del prompt y pesan más).
+   Historial de versiones en el perfil; "volver a esta" copia una vieja como versión nueva (nada se pisa).
+   Guardado optimista: si la versión vigente cambió mientras tanto → 409 y se pide recargar.
+7. ⏭️ El "puesto de trabajo" y lo demás de `TODO.md`

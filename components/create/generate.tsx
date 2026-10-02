@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GenerationError, type Progress, generateNotHuman } from "@/lib/nothuman/generate";
 import type { NotHuman } from "@/lib/nothuman/schema";
-import { StoreError, downloadJson, keepLocally, saveNotHuman } from "@/lib/nothuman/store";
+import { downloadJson, keepLocally, saveNotHuman } from "@/lib/nothuman/store";
 import type { Conversation } from "@/lib/whatsapp/analyze";
 import { useI18n } from "../i18n";
 import { Magnetic } from "../magnetic";
 import { ProfileView } from "../nothuman/profile-view";
+import { storeErrorMessage } from "../nothuman/store-ui";
 import type { Business } from "./business-form";
 
 type State =
@@ -51,9 +52,7 @@ export function GenerateSection(props: { conversations: Conversation[]; owner: s
         setState({ kind: "done", nh });
       } catch (err) {
         keepLocally(nh);
-        const e = err instanceof StoreError ? err : new StoreError("generic", String(err));
-        const errors = dict.store.errors;
-        setState({ kind: "done", nh, saveError: e.code === "generic" ? errors.generic(e.message) : errors[e.code] });
+        setState({ kind: "done", nh, saveError: storeErrorMessage(dict.store, err) });
       }
     } catch (err) {
       const e = err instanceof GenerationError ? err : new GenerationError("generic", String(err));

@@ -8,17 +8,19 @@ import { DEFAULT_MODEL_ID, MODELS, findModel } from "@/lib/llm/models";
 import { type ChatReply, type ChatTurn, formatCost, sendChat } from "@/lib/nothuman/chat";
 import { GenerationError } from "@/lib/nothuman/generate";
 import type { NotHuman } from "@/lib/nothuman/schema";
-import { useNotHumans } from "@/lib/nothuman/store";
+import { findLeak } from "@/lib/nothuman/pipeline";
+import { StoreError, refreshNotHumans, saveCorrections, useNotHumans } from "@/lib/nothuman/store";
 import { useI18n } from "../i18n";
 import { WithPlaceholders } from "../nothuman/profile-view";
-import { StoreErrorNotice } from "../nothuman/store-ui";
+import { StoreErrorNotice, storeErrorMessage } from "../nothuman/store-ui";
 
 const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
 
 /** Cuánto espera el notHuman por si el cliente manda varios mensajes seguidos, como en WhatsApp. */
 const DEBOUNCE_MS = 1300;
 
-type Turn = ChatTurn & { id: number; meta?: ChatReply };
+/** `original`: lo que había dicho el notHuman antes de que lo corrijan. `saved`: la corrección ya está en una versión. */
+type Turn = ChatTurn & { id: number; meta?: ChatReply; original?: string[]; saved?: boolean };
 
 export function TestDrive({ initialId }: { initialId?: string }) {
   const { t: dict } = useI18n();
@@ -72,6 +74,7 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
   const [status, setStatus] = useState<"idle" | "waiting" | "thinking">("idle");
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>(null);
 
   const turnsRef = useRef<Turn[]>([]);
   const modelRef = useRef(modelId);
@@ -177,6 +180,60 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
     setStatus("idle");
     input.current?.focus();
   }
+
+  // --- Correcciones ---------------------------------------------------------------------------
+
+  /** Lo que dijo el cliente justo antes de una respuesta: es el contexto del ejemplo corregido. */
+  function contextOf(turnId: number): string {
+    const all = turnsRef.current;
+    const at = all.findIndex((x) => x.id === turnId);
+    const client = all.slice(0, at).findLast((x) => x.from === "client");
+    return client?.texts.join("\n") ?? "";
+  }
+
+  /** Aplica una corrección a la charla. Devuelve un error si se coló un dato real. */
+  function correct(turnId: number, texts: string[]): string | null {
+    const leak = findLeak({ intent: "other", context: "", reply: texts });
+    if (leak) return dict.store.errors.leak(leak);
+    const all = turnsRef.current;
+    update(
+      all.map((x) => {
+        if (x.id !== turnId) return x;
+        const original = x.original ?? x.texts;
+        // Si quedó igual que lo que había dicho, no es una corrección.
+        if (original.join("\n") === texts.join("\n")) return { ...x, texts: original, original: undefined, saved: undefined };
+        return { ...x, texts, original, saved: false };
+      }),
+    );
+    setShown((s) => ({ ...s, [turnId]: texts.length }));
+    setSaveState(null);
+    return null;
+  }
+
+  const pending = turns.filter((x) => x.original && !x.saved);
+
+  async function saveVersion() {
+    if (!pending.length) return;
+    setSaveState({ kind: "saving" });
+    try {
+      const corrections = pending.map((x) => ({ intent: "other" as const, context: contextOf(x.id), reply: x.texts }));
+      const next = await saveCorrections(nh.id, nh.version, corrections);
+      const ids = new Set(pending.map((x) => x.id));
+      update(turnsRef.current.map((x) => (ids.has(x.id) ? { ...x, saved: true } : x)));
+      setSaveState({ kind: "saved", version: next.version });
+    } catch (err) {
+      const conflict = err instanceof StoreError && err.code === "conflict";
+      setSaveState({ kind: "error", message: storeErrorMessage(dict.store, err), conflict });
+    }
+  }
+
+  // Avisar antes de irse con correcciones sin guardar.
+  useEffect(() => {
+    if (!pending.length) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [pending.length]);
 
   const totals = useMemo(() => {
     const replies = turns.filter((x) => x.meta).map((x) => x.meta!);
@@ -294,7 +351,13 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
                   ))}
                 </div>
               ) : (
-                <NhTurn key={turn.id} turn={turn} shown={shown[turn.id] ?? 0} />
+                <NhTurn
+                  key={turn.id}
+                  turn={turn}
+                  shown={shown[turn.id] ?? 0}
+                  owner={nh.owner}
+                  onCorrect={(texts) => correct(turn.id, texts)}
+                />
               ),
             )}
 
@@ -401,6 +464,17 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
               </div>
             </div>
           </div>
+          <Corrections
+            name={nh.name}
+            version={nh.version}
+            pending={pending.length}
+            state={saveState}
+            onSave={() => void saveVersion()}
+            onReload={() => {
+              refreshNotHumans();
+              setSaveState(null);
+            }}
+          />
           <p className="px-2 font-mono text-[10px] leading-relaxed text-white/30">{t.priceNote}</p>
           <p className="px-2 text-xs leading-relaxed text-white/40">{t.placeholderHint}</p>
         </aside>
@@ -409,22 +483,63 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
   );
 }
 
-function NhTurn({ turn, shown }: { turn: Turn; shown: number }) {
+type NhTurnProps = { turn: Turn; shown: number; owner: string; onCorrect: (texts: string[]) => string | null };
+
+function NhTurn({ turn, shown, owner, onCorrect }: NhTurnProps) {
   const { t: dict } = useI18n();
   const t = dict.chat;
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
   const meta = turn.meta;
   const done = shown >= turn.texts.length;
   const nf = (n: number) => n.toLocaleString(dict.intl);
 
+  if (editing) {
+    return (
+      <CorrectionEditor
+        owner={owner}
+        initial={turn.texts}
+        onCancel={() => setEditing(false)}
+        onSave={(texts) => {
+          const error = onCorrect(texts);
+          if (!error) setEditing(false);
+          return error;
+        }}
+      />
+    );
+  }
+
   return (
     <div className="mt-2 flex flex-col items-start gap-1.5">
+      <AnimatePresence>
+        {showOriginal &&
+          turn.original?.map((text, i) => (
+            <motion.span
+              key={`o${i}`}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-white/10 px-3.5 py-2 text-[15px] leading-snug text-white/40 line-through decoration-rose/60"
+            >
+              {text}
+            </motion.span>
+          ))}
+      </AnimatePresence>
       {turn.texts.slice(0, shown).map((text, i) => (
-        <Bubble key={i} side="left">
+        <Bubble key={`${turn.original ? "c" : "o"}${i}`} side="left" corrected={!!turn.original}>
           <WithPlaceholders text={text} onAcid />
         </Bubble>
       ))}
       {!done && shown > 0 && <Dots />}
+      {done && turn.original && (
+        <div className="flex items-center gap-3 pl-1 font-mono text-[10px]">
+          <span className={turn.saved ? "text-acid" : "text-violet-300"}>✎ {turn.saved ? t.correctedSaved : t.corrected}</span>
+          <button onClick={() => setShowOriginal(!showOriginal)} className="text-white/40 transition hover:text-white/70">
+            {showOriginal ? t.hideOriginal : t.showOriginal}
+          </button>
+        </div>
+      )}
       {meta && done && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -440,6 +555,12 @@ function NhTurn({ turn, shown }: { turn: Turn; shown: number }) {
               {open ? t.hideThinking : t.showThinking}
             </button>
           )}
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-full border border-white/10 px-2 py-0.5 text-white/50 transition hover:border-violet/50 hover:text-violet-200"
+          >
+            {t.correct}
+          </button>
         </motion.div>
       )}
       <AnimatePresence>
@@ -458,7 +579,135 @@ function NhTurn({ turn, shown }: { turn: Turn; shown: number }) {
   );
 }
 
-function Bubble({ side, children }: { side: "left" | "right"; children: React.ReactNode }) {
+/** Para reescribir una respuesta como la diría la persona. Una línea por mensaje de WhatsApp. */
+function CorrectionEditor(props: {
+  owner: string;
+  initial: string[];
+  onCancel: () => void;
+  onSave: (texts: string[]) => string | null;
+}) {
+  const t = useI18n().t.chat;
+  const [value, setValue] = useState(props.initial.join("\n"));
+  const [error, setError] = useState<string | null>(null);
+  const texts = value
+    .split("\n")
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  function save() {
+    if (texts.length) setError(props.onSave(texts));
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="mt-2 w-full max-w-[min(85%,520px)] self-start rounded-3xl border border-violet/40 bg-violet/[0.08] p-3"
+    >
+      <p className="px-1 font-mono text-[10px] uppercase tracking-[0.16em] text-violet-200">{t.correctTitle(props.owner)}</p>
+      <textarea
+        autoFocus
+        value={value}
+        rows={Math.min(8, Math.max(2, value.split("\n").length))}
+        maxLength={2000}
+        onChange={(e) => {
+          setValue(e.target.value);
+          setError(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) save();
+          if (e.key === "Escape") props.onCancel();
+        }}
+        className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-ink/60 px-3.5 py-2.5 text-[15px] leading-snug outline-none focus:border-violet/60"
+      />
+      <p className="px-1 text-[11px] leading-relaxed text-white/40">{t.correctHint}</p>
+      {error && <p className="mt-1 px-1 text-xs text-rose">{error}</p>}
+      <div className="mt-2 flex justify-end gap-2">
+        <button onClick={props.onCancel} className="rounded-full px-3 py-1.5 text-sm text-white/50 transition hover:text-white">
+          {t.cancel}
+        </button>
+        <button
+          onClick={save}
+          disabled={!texts.length}
+          className="rounded-full bg-violet px-4 py-1.5 text-sm font-medium text-white transition hover:scale-[1.03] disabled:opacity-40"
+        >
+          {t.correctSave}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+type SaveState =
+  | { kind: "saving" }
+  | { kind: "saved"; version: number }
+  | { kind: "error"; message: string; conflict: boolean }
+  | null;
+
+/** Tarjeta del costado: correcciones pendientes y el botón para guardarlas como versión nueva. */
+function Corrections(props: {
+  name: string;
+  version: number;
+  pending: number;
+  state: SaveState;
+  onSave: () => void;
+  onReload: () => void;
+}) {
+  const t = useI18n().t.chat;
+  const { state } = props;
+  return (
+    <motion.div
+      layout
+      className={`rounded-[28px] border p-5 transition-colors ${
+        props.pending ? "border-violet/40 bg-violet/[0.07]" : "border-white/10 bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex items-baseline justify-between">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">{t.corrections}</p>
+        <span className="font-mono text-[11px] text-white/40">v{props.version}</span>
+      </div>
+      {props.pending > 0 ? (
+        <>
+          <p className="mt-2 font-serif text-3xl leading-tight text-violet-200">{t.pending(props.pending)}</p>
+          <button
+            onClick={props.onSave}
+            disabled={state?.kind === "saving"}
+            className="mt-4 w-full rounded-full bg-violet px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_40px_-10px_rgba(139,92,246,0.8)] transition hover:scale-[1.02] disabled:opacity-50"
+          >
+            {state?.kind === "saving" ? t.saving : t.saveVersion(props.version + 1)}
+          </button>
+        </>
+      ) : (
+        <p className="mt-2 text-sm leading-relaxed text-white/50">{t.correctionsHint(props.name)}</p>
+      )}
+      <AnimatePresence>
+        {state?.kind === "saved" && (
+          <motion.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-3 text-sm text-acid"
+          >
+            ✓ {t.savedAs(state.version)}
+          </motion.p>
+        )}
+        {state?.kind === "error" && (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 text-sm text-rose">
+            {state.message}
+            {state.conflict && (
+              <button onClick={props.onReload} className="ml-2 underline underline-offset-2">
+                {t.reload}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function Bubble({ side, corrected, children }: { side: "left" | "right"; corrected?: boolean; children: React.ReactNode }) {
   return (
     <motion.span
       layout
@@ -467,7 +716,9 @@ function Bubble({ side, children }: { side: "left" | "right"; children: React.Re
       transition={{ type: "spring", stiffness: 420, damping: 28 }}
       style={{ originX: side === "left" ? 0 : 1, originY: 1 }}
       className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[15px] leading-snug ${
-        side === "left" ? "rounded-bl-md bg-acid text-ink" : "rounded-br-md bg-white/[0.09]"
+        side === "right"
+          ? "rounded-br-md bg-white/[0.09]"
+          : `rounded-bl-md bg-acid text-ink ${corrected ? "ring-2 ring-violet ring-offset-2 ring-offset-ink" : ""}`
       }`}
     >
       {children}

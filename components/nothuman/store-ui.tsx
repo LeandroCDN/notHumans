@@ -3,13 +3,22 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { StoreError, importJson, uploadLeftovers, useLocalLeftovers } from "@/lib/nothuman/store";
+import type { Dict } from "@/lib/i18n/dictionaries";
 import { useI18n } from "../i18n";
 
 // Piezas de UI alrededor del guardado: errores de la base, lo que quedó en el navegador e importar JSON.
 
+/** El mensaje para mostrar de un error de guardado. */
+export function storeErrorMessage(t: Dict["store"], error: unknown): string {
+  const e = error instanceof StoreError ? error : new StoreError("generic", String(error));
+  if (e.code === "generic") return e.message === "invalid_json" ? t.invalidJson : t.errors.generic(e.message);
+  if (e.code === "leak") return t.errors.leak(e.message);
+  return t.errors[e.code];
+}
+
 export function StoreErrorNotice({ error, reload }: { error: StoreError; reload: () => void }) {
   const t = useI18n().t.store;
-  const message = error.code === "generic" ? t.errors.generic(error.message) : t.errors[error.code];
+  const message = storeErrorMessage(t, error);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -80,14 +89,7 @@ export function ImportJsonButton() {
       const r = await importJson(file);
       setNote({ ok: true, text: r.created ? t.imported(r.name) : t.alreadyThere(r.name) });
     } catch (err) {
-      const e = err instanceof StoreError ? err : new StoreError("generic", String(err));
-      const text =
-        e.message === "invalid_json"
-          ? t.invalidJson
-          : e.code === "generic"
-            ? t.errors.generic(e.message)
-            : t.errors[e.code];
-      setNote({ ok: false, text });
+      setNote({ ok: false, text: storeErrorMessage(t, err) });
     }
     if (input.current) input.current.value = "";
   }

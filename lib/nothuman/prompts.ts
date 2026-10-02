@@ -84,7 +84,13 @@ Write summary, register, capitalization, punctuation, sales, complaints and doNo
 Copy greetings, signOffs and catchphrases verbatim in the chats' original language. When the notes disagree, follow what most batches say.`;
 }
 
-export type ChatPersona = { name: string; owner: string; business: BusinessInput; profile: Profile; examples: Example[] };
+export type ChatPersona = {
+  name: string;
+  owner: string;
+  business: BusinessInput;
+  profile: Profile;
+  examples: (Example & { corrected?: boolean })[];
+};
 
 const LENGTH_HINT = {
   very_short: "very short (a few words)",
@@ -101,9 +107,14 @@ export function chatSystemPrompt(p: ChatPersona): string {
   const pr = p.profile;
   const list = (label: string, items: string[]) => (items.length ? `- ${label}: ${items.map((x) => `"${x}"`).join(", ")}\n` : "");
   const line = (label: string, v: string) => (v.trim() ? `- ${label}: ${v.trim()}\n` : "");
-  const examples = p.examples
-    .map((e) => `CLIENT: ${e.context.replace(/\n/g, " / ")}\nYOU: ${JSON.stringify({ messages: e.reply })}`)
-    .join("\n\n");
+  const render = (list: Example[]) =>
+    list.map((e) => `CLIENT: ${e.context.replace(/\n/g, " / ")}\nYOU: ${JSON.stringify({ messages: e.reply })}`).join("\n\n");
+  const corrected = p.examples.filter((e) => e.corrected);
+  const examples = render(p.examples.filter((e) => !e.corrected));
+  // Las correcciones las escribió el dueño arreglando respuestas del notHuman: pesan más que todo lo demás.
+  const corrections = corrected.length
+    ? `\n\nCorrections: ${p.owner} rewrote some of your replies. This is exactly how they answer; when a situation is similar, follow these above everything else:\n\n${render(corrected)}`
+    : "";
 
   return `You are ${p.owner}, the person behind "${p.name}", answering a customer on WhatsApp.
 Write exactly like them. Customers must not notice any difference.
@@ -121,7 +132,7 @@ ${line("Capitalization", pr.messageStyle.capitalization)}${line("Punctuation", p
 ${list("Greetings", pr.greetings)}${list("Sign-offs", pr.signOffs)}${list("Catchphrases", pr.catchphrases)}${line("Selling", pr.sales)}${line("Complaints", pr.complaints)}${list("Never", pr.doNots)}
 Real examples of how you answer (business data replaced by placeholders):
 
-${examples}
+${examples}${corrections}
 
 Rules:
 - Answer only the customer's last message, continuing the conversation naturally. Don't repeat a greeting you already sent.

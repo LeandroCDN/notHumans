@@ -1,6 +1,7 @@
 import "server-only";
 import { type SupabaseClient, createClient } from "@supabase/supabase-js";
 import type { NotHuman } from "@/lib/nothuman/schema";
+import { type VersionInfo, decodeNote } from "@/lib/nothuman/versions";
 
 // Dónde se guardan los notHumans. En producción: Supabase, con la secret key (solo server; las tablas
 // tienen RLS sin políticas, así que nadie más puede leerlas). Para desarrollar sin Supabase hay una
@@ -18,6 +19,13 @@ export type NotHumanRepo = {
   /** Crea el notHuman con su primera versión. Devuelve false si ese id ya existía. */
   create(nh: NotHuman, by: string): Promise<boolean>;
   remove(id: string): Promise<void>;
+  versions(id: string): Promise<VersionInfo[]>;
+  getVersion(id: string, version: number): Promise<NotHuman | null>;
+  /**
+   * Guarda `nh` como versión nueva (nh.version) y la deja vigente, solo si la vigente sigue siendo `base`.
+   * Devuelve false si otro la cambió mientras tanto.
+   */
+  saveVersion(nh: NotHuman, base: number, note: string, by: string): Promise<boolean>;
 };
 
 type Row = {
@@ -89,26 +97,110 @@ function supabaseRepo(db: SupabaseClient): NotHumanRepo {
       const { error } = await db.from("nothumans").delete().eq("id", id);
       if (error) throw fail("delete", error);
     },
+    async versions(id) {
+      const { data, error } = await db
+        .from("nothuman_versions")
+        .select("version, note, created_at, created_by, example_count")
+        .eq("nothuman_id", id)
+        .order("version", { ascending: false });
+      if (error) throw fail("versions", error);
+      return (data as { version: number; note: string; created_at: string; created_by: string; example_count: number }[]).map(
+        (v) => ({
+          version: v.version,
+          note: decodeNote(v.note),
+          createdAt: Date.parse(v.created_at),
+          createdBy: v.created_by,
+          examples: v.example_count,
+        }),
+      );
+    },
+    async getVersion(id, version) {
+      const [parent, row] = await Promise.all([
+        db.from("nothumans").select("id, name, owner, created_at").eq("id", id).maybeSingle(),
+        db
+          .from("nothuman_versions")
+          .select("version, business, profile, examples, stats")
+          .eq("nothuman_id", id)
+          .eq("version", version)
+          .maybeSingle(),
+      ]);
+      if (parent.error) throw fail("get version", parent.error);
+      if (row.error) throw fail("get version", row.error);
+      if (!parent.data || !row.data) return null;
+      return fromRow({ ...parent.data, ...row.data } as Row);
+    },
+    async saveVersion(nh, base, note, by) {
+      const { error } = await db.from("nothuman_versions").insert({
+        nothuman_id: nh.id,
+        version: nh.version,
+        business: nh.business,
+        profile: nh.profile,
+        examples: nh.examples,
+        stats: nh.stats,
+        note,
+        created_by: by,
+      });
+      if (error?.code === "23505") return false; // otro ya guardó esa versión
+      if (error) throw fail("save version", error);
+      // Solo si nadie movió la versión vigente mientras tanto.
+      const { data, error: uError } = await db
+        .from("nothumans")
+        .update({ current_version: nh.version, updated_at: new Date().toISOString() })
+        .eq("id", nh.id)
+        .eq("current_version", base)
+        .select("id");
+      if (uError || !data?.length) {
+        await db.from("nothuman_versions").delete().eq("nothuman_id", nh.id).eq("version", nh.version);
+        if (uError) throw fail("save version", uError);
+        return false;
+      }
+      return true;
+    },
   };
 }
 
+type MemoryEntry = { current: number; versions: { nh: NotHuman; note: string; by: string; at: number }[] };
+
 function memoryRepo(): NotHumanRepo {
-  const g = globalThis as unknown as { __nhMemory?: Map<string, NotHuman> };
-  const items = (g.__nhMemory ??= new Map());
+  const g = globalThis as unknown as { __nhMemory?: Map<string, MemoryEntry> };
+  const items = (g.__nhMemory ??= new Map<string, MemoryEntry>());
+  const current = (e: MemoryEntry) => e.versions.find((v) => v.nh.version === e.current)!.nh;
   return {
     async list() {
-      return [...items.values()].sort((a, b) => b.createdAt - a.createdAt);
+      return [...items.values()].map(current).sort((a, b) => b.createdAt - a.createdAt);
     },
     async get(id) {
-      return items.get(id) ?? null;
+      const e = items.get(id);
+      return e ? current(e) : null;
     },
-    async create(nh) {
+    async create(nh, by) {
       if (items.has(nh.id)) return false;
-      items.set(nh.id, nh);
+      items.set(nh.id, { current: nh.version, versions: [{ nh, note: "generated", by, at: Date.now() }] });
       return true;
     },
     async remove(id) {
       items.delete(id);
+    },
+    async versions(id) {
+      return (items.get(id)?.versions ?? [])
+        .map((v) => ({
+          version: v.nh.version,
+          note: decodeNote(v.note),
+          createdAt: v.at,
+          createdBy: v.by,
+          examples: v.nh.examples.length,
+        }))
+        .sort((a, b) => b.version - a.version);
+    },
+    async getVersion(id, version) {
+      return items.get(id)?.versions.find((v) => v.nh.version === version)?.nh ?? null;
+    },
+    async saveVersion(nh, base, note, by) {
+      const e = items.get(nh.id);
+      if (!e || e.current !== base || e.versions.some((v) => v.nh.version === nh.version)) return false;
+      e.versions.push({ nh, note, by, at: Date.now() });
+      e.current = nh.version;
+      return true;
     },
   };
 }

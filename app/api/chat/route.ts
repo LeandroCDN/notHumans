@@ -10,13 +10,13 @@ export const maxDuration = 120;
 const Text = z.string().trim().min(1).max(2000);
 
 const Body = z.object({
-  // Los notHumans viven en el navegador: el cliente manda la persona en cada request.
+  // El navegador ya tiene la persona cargada: la manda en cada request (perfil + ejemplos fijos).
   persona: z.object({
     name: z.string().max(200),
     owner: z.string().min(1).max(120),
     business: BusinessSchema,
     profile: ProfileSchema,
-    examples: z.array(ExampleSchema).max(40),
+    examples: z.array(ExampleSchema.extend({ corrected: z.boolean().optional() })).max(60),
   }),
   turns: z
     .array(z.object({ from: z.enum(["client", "nh"]), texts: z.array(Text).min(1).max(20) }))
