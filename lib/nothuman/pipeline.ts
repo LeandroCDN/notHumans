@@ -46,6 +46,14 @@ export function buildBlocks(conversations: Conversation[]): { blocks: string[]; 
 }
 
 // Datos concretos que se le pueden haber escapado al modelo al poner marcadores.
+// Ojo con el orden: gana el primero que matchea (y es el nombre que se muestra como motivo).
+
+/** Número de calle: 1 a 5 cifras, que no sea un año ni una hora, precio o porcentaje. */
+const STREET_NUMBER = String.raw`(?:n[°º.]?\s*)?(?!(?:19|20)\d{2}\b)\d{1,5}\b(?![.,:/]?\d|\s?%|\s?hs\b)`;
+/** Palabra de un nombre de calle (con tildes); en mayúscula si no hay otra pista de que es una dirección. */
+const WORD = String.raw`[\p{L}][\p{L}.']*`;
+const CAPITALIZED = String.raw`\p{Lu}[\p{L}.']*`;
+
 const LEAKS: [string, RegExp][] = [
   ["price", /\$\s?\d/],
   ["amount", /\b\d{1,3}(?:\.\d{3})+\b/],
@@ -53,7 +61,22 @@ const LEAKS: [string, RegExp][] = [
   ["link", /https?:\/\/|www\.|\b\w+\.(?:com|la|ar|net|io)\b/i],
   ["email", /[\w.+-]+@[\w-]+\.\w+/],
   ["tracking", /\b[A-Z]{2}\d{9}[A-Z]{2}\b/],
-  ["phone", /\+?\d[\d\s-]{7,}\d/],
+  // 8 cifras o más, con espacios, guiones, puntos o paréntesis en el medio: +1 (415) 645-3335, 11 2233-4455.
+  ["phone", /\+?\(?\d(?:[\s().-]{0,2}\d){7,}/],
+  // "av. colón 1234", "calle 12 n° 345", "pasaje las rosas 80".
+  [
+    "address",
+    new RegExp(String.raw`\b(?:av(?:enida)?|avda|calle|pasaje|pje|ruta|diagonal|diag)\.?\s+(?:${WORD}\s+){0,3}${STREET_NUMBER}`, "iu"),
+  ],
+  // "Rawson 2167", "Carlos Pellegrini 2699": nombre en mayúscula + altura de 3 a 5 cifras.
+  ["address", new RegExp(String.raw`(?<![\p{L}\d])${CAPITALIZED}(?:\s+${CAPITALIZED}){0,3}\s+(?=\d{3})${STREET_NUMBER}`, "u")],
+  // "rawson 2167 pb", "castelli 1554 2do b": en minúscula, solo si sigue algo de dirección.
+  [
+    "address",
+    new RegExp(String.raw`(?<![\p{L}\d])${WORD}\s+\d{2,5}\s*(?:pb|piso|p\.?\s?\d|dto|dpto|depto|timbre|esq(?:uina)?|entre)\b`, "iu"),
+  ],
+  // Precio sin signo: "a 600", "sale 1500", "por 2500".
+  ["price", /\b(?:a|por|sale|salen|cuesta|cuestan|vale|valen|son)\s+\d{3,}\b(?!\s?%)/i],
   ["alias", /\b[a-z]+\.[a-z]+\.[a-z]+\b/i],
 ];
 

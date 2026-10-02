@@ -42,11 +42,36 @@ describe("findLeak", () => {
     ["alias martina.ropa.mp", "alias"],
     ["seguimiento CA123456789AR", "tracking"],
     ["llamalo al 11 2233-4455", "phone"],
+    ["te paso el contacto +1 (415) 645-3335", "phone"],
+    ["escribile al (011) 4555 1234", "phone"],
+    ["Venite leaann / Rawson 2167 pb", "address"],
+    ["Oka dale / Castelli 1554", "address"],
+    ["Dirección: Carlos Pellegrini 2699, B7600 Mar del Plata", "address"],
+    ["estamos en av. colón 1234", "address"],
+    ["calle 12 n° 345 entre 5 y 6", "address"],
+    ["rawson 2167 pb", "address"],
+    ["vi otros el mismo dia, a 600 pero no es ese vuelo", "price"],
+    ["sale 1500 la remera", "price"],
   ])("detecta %s", (reply, kind) => expect(findLeak(ex(reply))).toBe(kind));
 
   it("deja pasar ejemplos con marcadores", () => {
     expect(findLeak(ex("sale {price} y con transfe {discount} off 😉"))).toBeNull();
     expect(findLeak(ex("tenés 30 días para cambiarlo, llega en 48/72hs"))).toBeNull();
+    expect(findLeak(ex("pasá por {address} o llamame al {phone}"))).toBeNull();
+  });
+
+  it("no confunde fechas, horas ni años con teléfonos o direcciones", () => {
+    for (const ok of [
+      "Viernes 25 de septiembre a las 21:00hs",
+      "me falta hotel del 11 al 14",
+      "Mayo 2026 arrancamos",
+      "llega el 25/09/2026",
+      "Somos 6, tipo 21 salgo",
+      "Tenes parrilla? Yo soy el gordo parrillero",
+      "te llega en 48 hs",
+    ]) {
+      expect(findLeak(ex(ok)), ok).toBeNull();
+    }
   });
 });
 

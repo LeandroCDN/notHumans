@@ -9,6 +9,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 function placeholderize(s: string): string {
   return s
     .replace(/https?:\/\/\S+/g, "{payment_link}")
+    .replace(/\+?\(?\d(?:[\s().-]{0,2}\d){7,}/g, "{phone}")
+    .replace(/\b\p{Lu}\p{L}+(?:\s+\p{Lu}\p{L}+)*\s+\d{3,5}\b/gu, "{address}")
     .replace(/\$\s?[\d.,]+/g, "{price}")
     .replace(/\d+\s?%/g, "{discount}");
 }

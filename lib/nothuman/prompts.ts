@@ -41,6 +41,10 @@ Rules for "examples":
 - "reply": the owner's answer COPIED VERBATIM, one array item per WhatsApp message, in the same order. Keep their spelling, typos, lowercase, punctuation, laughs and emojis. Never fix, translate or improve anything.
 - Replace business facts and personal data with placeholders, in both "context" and "reply": ${placeholders}.
   Replace only the fact itself and keep every other word. Example: "sale $48.000 y con transfe 10% off 😉" -> "sale {price} y con transfe {discount} off 😉".
+- Personal data is never kept, for anyone: phone numbers in any format (with +, spaces, dashes or parentheses) -> {phone};
+  street addresses (street and number, floor, apartment, between streets, postal code) -> {address}; emails -> {email};
+  the full name of a customer or of a third person -> {customer_name}.
+  Example: "pasá por Rawson 2167 pb o llamame al +1 (415) 645-3335" -> "pasá por {address} o llamame al {phone}".
 - Do NOT replace style: greetings, nicknames ("hermosa", "maestro", "genio"), slang, emojis, laughs.
 - Ignore lines that say "(media)".
 
