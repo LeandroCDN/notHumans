@@ -32,6 +32,11 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 - [ ] Probar con un export real con audios (iOS y Android) y ajustar
 - [ ] Más adelante: que el notHuman responda con audio (text-to-speech / voz clonada, con consentimiento)
 
+## Link público
+- [x] `/c/<token>` para chatear sin cuenta, con tope de respuestas por link y de mensajes por minuto
+- [ ] Elegir el tope de respuestas al crear el link (hoy 300) y ver las charlas que tuvo la gente
+- [ ] Con el "puesto de trabajo" y los datos de prueba, que el link muestre datos en vez de {price}
+
 ## Ideas sueltas
 - [x] Entrenar desde el chat: corregir una respuesta en el test drive ("ella lo diría así") y que entre como
   ejemplo en una versión nueva

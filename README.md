@@ -31,6 +31,8 @@ npm run dev
 4. **Test drive** (`/app/chat`): chateás como cliente con un notHuman. Elegís notHuman y modelo (Flash / V4 Pro, con o sin thinking) y ves tokens, caché y costo de cada respuesta. El prompt es fijo por notHuman (perfil + ejemplos canónicos) para que DeepSeek lo sirva desde caché; los modelos y precios están en `lib/llm/models.ts`.
 5. **Corregir y versionar:** en el test drive, "✎ corregir" una respuesta y "Guardar como vN" crea una versión nueva con esas correcciones como ejemplos fijos. El perfil muestra el historial y permite volver a una versión anterior.
 
+6. **Link público:** desde el perfil, "Crear link público" da un `/c/<token>` para que cualquiera chatee con el notHuman sin cuenta (con tope de respuestas por link y de mensajes por minuto). Se puede desactivar.
+
 ## Tests
 
 ```bash

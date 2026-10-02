@@ -205,19 +205,28 @@ function memoryRepo(): NotHumanRepo {
   };
 }
 
+/** Cliente de Supabase con la secret key, o null si no está configurado (desarrollo en memoria). */
+let client: SupabaseClient | null | undefined;
+export function supabase(): SupabaseClient | null {
+  if (client !== undefined) return client;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (url && key) {
+    client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  } else if (process.env.NODE_ENV !== "production" || process.env.LLM_MOCK === "1") {
+    console.warn("notHumans: sin Supabase configurado, se guarda en memoria");
+    client = null;
+  } else {
+    throw new StorageNotConfiguredError();
+  }
+  return client;
+}
+
 let repo: NotHumanRepo | null = null;
 
 export function notHumans(): NotHumanRepo {
   if (repo) return repo;
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (url && key) {
-    repo = supabaseRepo(createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }));
-  } else if (process.env.NODE_ENV !== "production" || process.env.LLM_MOCK === "1") {
-    console.warn("notHumans: sin Supabase configurado, se guardan en memoria");
-    repo = memoryRepo();
-  } else {
-    throw new StorageNotConfiguredError();
-  }
+  const db = supabase();
+  repo = db ? supabaseRepo(db) : memoryRepo();
   return repo;
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_MODEL_ID, MODELS, findModel } from "@/lib/llm/models";
-import { type ChatReply, type ChatTurn, formatCost, sendChat } from "@/lib/nothuman/chat";
+import { type ChatReply, formatCost, sendChat } from "@/lib/nothuman/chat";
 import { GenerationError } from "@/lib/nothuman/generate";
 import type { NotHuman } from "@/lib/nothuman/schema";
 import { findLeak } from "@/lib/nothuman/pipeline";
@@ -13,14 +13,12 @@ import { StoreError, refreshNotHumans, saveCorrections, useNotHumans } from "@/l
 import { useI18n } from "../i18n";
 import { WithPlaceholders } from "../nothuman/profile-view";
 import { StoreErrorNotice, storeErrorMessage } from "../nothuman/store-ui";
+import { Bubble, Dots } from "./bubbles";
+import { type ConvTurn, useConversation } from "./use-conversation";
 
 const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
 
-/** Cuánto espera el notHuman por si el cliente manda varios mensajes seguidos, como en WhatsApp. */
-const DEBOUNCE_MS = 1300;
-
-/** `original`: lo que había dicho el notHuman antes de que lo corrijan. `saved`: la corrección ya está en una versión. */
-type Turn = ChatTurn & { id: number; meta?: ChatReply; original?: string[]; saved?: boolean };
+type Turn = ConvTurn<ChatReply>;
 
 export function TestDrive({ initialId }: { initialId?: string }) {
   const { t: dict } = useI18n();
@@ -68,33 +66,27 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
   const hue = HUES[Math.max(0, list.indexOf(nh)) % HUES.length];
 
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
-  const [turns, setTurns] = useState<Turn[]>([]);
-  // Cuántos mensajes de cada respuesta ya "llegaron" (se muestran de a uno, como alguien tipeando).
-  const [shown, setShown] = useState<Record<number, number>>({});
-  const [status, setStatus] = useState<"idle" | "waiting" | "thinking">("idle");
-  const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [saveState, setSaveState] = useState<SaveState>(null);
-
-  const turnsRef = useRef<Turn[]>([]);
-  const modelRef = useRef(modelId);
-  const busy = useRef(false);
-  const again = useRef(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const nextId = useRef(1);
   const scroller = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  modelRef.current = modelId;
 
-  function update(next: Turn[]) {
-    turnsRef.current = next;
-    setTurns(next);
-  }
+  const conv = useConversation<ChatReply>(
+    async (turns) => {
+      const reply = await sendChat(nh, turns, modelId);
+      return { messages: reply.messages, meta: reply };
+    },
+    (err) => {
+      const e = err instanceof GenerationError ? err : new GenerationError("generic", String(err));
+      const errors = dict.generate.errors;
+      return e.code === "generic" ? errors.generic(e.message) : errors[e.code];
+    },
+  );
+  const { turns, turnsRef, shown, setShown, status, error, typing, revealing, update } = conv;
 
   useEffect(() => {
     // Foco directo solo con mouse: en el celu abriría el teclado tapando todo.
     if (matchMedia("(pointer: fine)").matches) input.current?.focus({ preventScroll: true });
-    return () => void (timer.current && clearTimeout(timer.current));
   }, []);
 
   // Siempre abajo de todo, como un chat.
@@ -102,82 +94,14 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [turns, shown, status]);
 
-  async function respond() {
-    if (busy.current) {
-      again.current = true;
-      return;
-    }
-    const snapshot = turnsRef.current;
-    if (snapshot.at(-1)?.from !== "client") return;
-    busy.current = true;
-    setStatus("thinking");
-    setError(null);
-    try {
-      const reply = await sendChat(
-        nh,
-        snapshot.map(({ from, texts }) => ({ from, texts })),
-        modelRef.current,
-      );
-      // Si mientras tanto se reinició la conversación, la respuesta ya no corresponde.
-      const asked = snapshot[snapshot.length - 1];
-      const current = turnsRef.current;
-      const at = current.findIndex((x) => x.id === asked.id);
-      if (at === -1) return;
-      // Lo que el cliente escribió mientras esperaba queda después de la respuesta (y dispara otra).
-      const later = current[at].texts.slice(asked.texts.length);
-      const id = nextId.current++;
-      update([
-        ...current.slice(0, at),
-        { ...current[at], texts: asked.texts },
-        { id, from: "nh", texts: reply.messages, meta: reply },
-        ...(later.length ? [{ id: nextId.current++, from: "client" as const, texts: later }] : []),
-      ]);
-      await reveal(id, reply.messages);
-    } catch (err) {
-      const e = err instanceof GenerationError ? err : new GenerationError("generic", String(err));
-      const errors = dict.generate.errors;
-      setError(e.code === "generic" ? errors.generic(e.message) : errors[e.code]);
-    } finally {
-      busy.current = false;
-      setStatus("idle");
-      if (again.current) {
-        again.current = false;
-        void respond();
-      }
-    }
-  }
-
-  async function reveal(id: number, messages: string[]) {
-    for (let i = 0; i < messages.length; i++) {
-      // Un poco más de espera para los mensajes largos, sin pasarse.
-      if (i > 0) await new Promise((r) => setTimeout(r, Math.min(1600, 450 + messages[i].length * 22)));
-      setShown((s) => ({ ...s, [id]: i + 1 }));
-    }
-  }
-
   function send(text: string) {
-    const clean = text.trim();
-    if (!clean) return;
-    const current = turnsRef.current;
-    const last = current.at(-1);
-    update(
-      last?.from === "client"
-        ? [...current.slice(0, -1), { ...last, texts: [...last.texts, clean] }]
-        : [...current, { id: nextId.current++, from: "client", texts: [clean] }],
-    );
+    if (!text.trim()) return;
+    conv.send(text);
     setDraft("");
-    if (!busy.current) setStatus("waiting");
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => void respond(), DEBOUNCE_MS);
   }
 
   function reset() {
-    if (timer.current) clearTimeout(timer.current);
-    again.current = false;
-    update([]);
-    setShown({});
-    setError(null);
-    setStatus("idle");
+    conv.reset();
     input.current?.focus();
   }
 
@@ -247,8 +171,6 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
     };
   }, [turns]);
 
-  const revealing = turns.some((x) => x.from === "nh" && (shown[x.id] ?? 0) < x.texts.length);
-  const typing = status === "thinking" || revealing;
   const nf = (n: number) => n.toLocaleString(dict.intl);
   const cacheRate = totals.input ? totals.cached / totals.input : 0;
 
@@ -382,7 +304,7 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
                 className="mt-3 flex flex-wrap items-center gap-3 self-stretch rounded-2xl border border-rose/30 bg-rose/[0.06] px-4 py-3 text-sm text-rose"
               >
                 <span className="flex-1">{error}</span>
-                <button onClick={() => void respond()} className="rounded-full border border-rose/40 px-3 py-1 text-xs">
+                <button onClick={conv.retry} className="rounded-full border border-rose/40 px-3 py-1 text-xs">
                   {dict.generate.retry}
                 </button>
               </motion.div>
@@ -704,40 +626,6 @@ function Corrections(props: {
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-function Bubble({ side, corrected, children }: { side: "left" | "right"; corrected?: boolean; children: React.ReactNode }) {
-  return (
-    <motion.span
-      layout
-      initial={{ opacity: 0, scale: 0.6, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28 }}
-      style={{ originX: side === "left" ? 0 : 1, originY: 1 }}
-      className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[15px] leading-snug ${
-        side === "right"
-          ? "rounded-br-md bg-white/[0.09]"
-          : `rounded-bl-md bg-acid text-ink ${corrected ? "ring-2 ring-violet ring-offset-2 ring-offset-ink" : ""}`
-      }`}
-    >
-      {children}
-    </motion.span>
-  );
-}
-
-function Dots() {
-  return (
-    <span className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-white/[0.07] px-3.5 py-3">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="size-1.5 rounded-full bg-acid"
-          animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
-        />
-      ))}
-    </span>
   );
 }
 

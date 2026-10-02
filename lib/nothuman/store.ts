@@ -131,6 +131,22 @@ export function refreshNotHumans() {
   void load(true);
 }
 
+// --- Link público ---------------------------------------------------------------------------------
+
+export type PublicShare = { token: string; createdAt: number; replies: number; maxReplies: number };
+
+export async function getShare(id: string): Promise<PublicShare | null> {
+  return (await call<{ share: PublicShare | null }>(`/api/nothumans/${id}/share`)).share;
+}
+
+export async function createShare(id: string): Promise<PublicShare> {
+  return (await call<{ share: PublicShare }>(`/api/nothumans/${id}/share`, { method: "POST" })).share;
+}
+
+export async function revokeShare(id: string): Promise<void> {
+  await call(`/api/nothumans/${id}/share`, { method: "DELETE" });
+}
+
 export async function deleteNotHuman(id: string) {
   await call(`/api/nothumans/${id}`, { method: "DELETE" });
   cache = (cache ?? []).filter((x) => x.id !== id);

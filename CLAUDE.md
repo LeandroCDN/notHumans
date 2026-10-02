@@ -31,6 +31,13 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   `nothuman_versions` y la vista `nothumans_current`. Solo accede el server con `SUPABASE_SECRET_KEY`; RLS sin
   políticas y sin permisos para `anon`/`authenticated`. Migraciones en `supabase/migrations/` (aplicarlas con el
   conector de Supabase). Sin Supabase configurado, en desarrollo (o con `LLM_MOCK=1`) se guarda en memoria.
+- Link público `/c/<token>` (sin login): tabla `nothuman_shares` (token aleatorio de 24 bytes, uno activo por
+  notHuman, tope de respuestas `max_replies` que suma la función `use_share` de forma atómica). La persona la arma
+  el server desde la base (`lib/nothuman/persona.ts` + `replyAs` en `lib/nothuman/reply.ts`, igual que el test
+  drive); al público solo le llegan los mensajes. Además: 12 mensajes por minuto por IP (en memoria), charla de
+  hasta 40 turnos. Se crea/copia/desactiva desde el perfil del notHuman.
+- La mecánica del chat (espera por varios mensajes, burbujas de a una, cola) está en
+  `components/chat/use-conversation.ts`, compartida entre el test drive y el link público.
 - localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 
 ## Estado y próximos pasos
@@ -45,4 +52,5 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
    Historial de versiones en el perfil; "volver a esta" copia una vieja como versión nueva (nada se pisa).
    Guardado optimista: si la versión vigente cambió mientras tanto → 409 y se pide recargar.
 7. ✅ Notas de voz: transcripción de audios del .zip con Groq Whisper
-8. ⏭️ El "puesto de trabajo" y lo demás de `TODO.md`
+8. ✅ Link público para chatear con un notHuman sin cuenta
+9. ⏭️ El "puesto de trabajo" y lo demás de `TODO.md`
