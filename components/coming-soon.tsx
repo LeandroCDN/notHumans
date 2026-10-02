@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useI18n } from "./i18n";
 
 /** Pantalla de "todavía no está" para las secciones que faltan. */
-type Props = { section: "explore"; cta?: { href: string; label: string }; children?: React.ReactNode };
+type Props = { section: "explore" | "jobs"; cta?: { href: string; label: string }; children?: React.ReactNode };
 
 export function ComingSoon({ section, cta, children }: Props) {
   const { t } = useI18n();

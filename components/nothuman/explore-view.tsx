@@ -1,151 +1,123 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import Link from "next/link";
-import type { NotHuman } from "@/lib/nothuman/schema";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { StoreError, deleteNotHuman, downloadJson, useLocalLeftovers, useNotHumans } from "@/lib/nothuman/store";
+import { useCallback, useRef } from "react";
+import type { NotHuman } from "@/lib/nothuman/schema";
+import { useLocalLeftovers, useNotHumans } from "@/lib/nothuman/store";
 import { ComingSoon } from "../coming-soon";
 import { useI18n } from "../i18n";
-import { ProfileView } from "./profile-view";
 import { ImportJsonButton, LeftoversBanner, StoreErrorNotice } from "./store-ui";
-import { ShareLink } from "./share-link";
-import { VersionHistory } from "./version-history";
+import { HUB_TABS, type HubTab, Workspace } from "./workspace";
 
-const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
+// La sección notHumans: Explorar + test drive + perfil en una sola vista.
+// A la izquierda la lista; en el centro el chat; al costado un panel con pestañas.
+// El notHuman elegido y la pestaña viven en la URL (/app/explore?nh=…&tab=…), así se pueden compartir y recargar.
 
-export function ExploreView() {
+export const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
+
+export function NotHumansHub({ initialId, initialTab }: { initialId?: string; initialTab?: string }) {
   const { t: dict } = useI18n();
-  const t = dict.explore;
+  const t = dict.hub;
+  const router = useRouter();
   const { list, error, reload } = useNotHumans();
   const leftovers = useLocalLeftovers();
+  // Correcciones sin guardar en el chat abierto: no cambiar de notHuman sin avisar.
+  const dirty = useRef(false);
+  const onDirty = useCallback((d: boolean) => {
+    dirty.current = d;
+  }, []);
 
   if (list === null) return null;
   if (list.length === 0 && !error && leftovers.length === 0) {
     return (
-      <ComingSoon section="explore" cta={{ href: "/app/new", label: t.createCta }}>
+      <ComingSoon section="explore" cta={{ href: "/app/new", label: dict.explore.createCta }}>
         <ImportJsonButton />
       </ComingSoon>
     );
   }
 
+  const nh = list.find((x) => x.id === initialId) ?? list[0];
+  const tab: HubTab = HUB_TABS.includes(initialTab as HubTab) ? (initialTab as HubTab) : "chat";
+  const go = (id: string | undefined, nextTab: HubTab) =>
+    router.replace(`/app/explore?${new URLSearchParams({ ...(id ? { nh: id } : {}), tab: nextTab })}`, { scroll: false });
+
+  function pick(id: string) {
+    if (id === nh?.id) return;
+    if (dirty.current && !confirm(t.leaveCorrections)) return;
+    dirty.current = false;
+    go(id, tab);
+  }
+
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-32 pt-6 sm:px-10">
-      <Link href="/app" className="font-mono text-xs text-white/40 transition hover:text-acid">
-        {dict.common.back}
-      </Link>
-      <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-acid">{t.eyebrow}</p>
-      <h1 className="mt-4 font-serif text-[clamp(2.8rem,8vw,6rem)] leading-[0.9] tracking-tight">
-        {t.listTitle} <em className="text-acid">{t.listAccent}</em>
-      </h1>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-white/45">{t.localNote}</p>
-        <ImportJsonButton />
-      </div>
+    <main className="mx-auto max-w-[1500px] px-3 pb-12 pt-2 sm:px-6">
       {error && <StoreErrorNotice error={error} reload={reload} />}
       <LeftoversBanner />
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <AnimatePresence>
-          {list.map((nh, i) => (
-            <motion.div
-              key={nh.id}
+      <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start">
+        <Sidebar list={list} current={nh?.id} onPick={pick} />
+        {nh ? (
+          <Workspace
+            key={nh.id}
+            nh={nh}
+            hue={HUES[Math.max(0, list.indexOf(nh)) % HUES.length]}
+            tab={tab}
+            onTab={(next) => go(nh.id, next)}
+            onDirty={onDirty}
+          />
+        ) : (
+          <p className="m-auto py-24 font-serif text-3xl text-white/60">{t.empty}</p>
+        )}
+      </div>
+    </main>
+  );
+}
+
+/** La lista de notHumans: columna en la compu, fila que se desliza en el celu. */
+function Sidebar({ list, current, onPick }: { list: NotHuman[]; current?: string; onPick: (id: string) => void }) {
+  const { t: dict } = useI18n();
+  const t = dict.hub;
+  return (
+    <aside className="flex shrink-0 flex-col gap-2 lg:sticky lg:top-4 lg:w-[230px]">
+      <p className="hidden px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40 lg:block">{t.listTitle}</p>
+      <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+        {list.map((x, i) => {
+          const active = x.id === current;
+          return (
+            <motion.button
+              key={x.id}
               layout
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ delay: i * 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              onClick={() => onPick(x.id)}
+              aria-current={active ? "true" : undefined}
+              className={`relative flex shrink-0 items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition lg:w-full ${
+                active ? "border-acid/45 bg-acid/[0.07]" : "border-transparent hover:bg-white/[0.04]"
+              }`}
             >
-              <Link
-                href={`/app/n/${nh.id}`}
-                className="group flex h-full flex-col rounded-[28px] border border-white/10 bg-white/[0.03] p-6 transition hover:-translate-y-1 hover:border-white/25"
-              >
-                <div className="flex items-start justify-between">
-                  <div className={`animate-morph size-14 bg-gradient-to-br ${HUES[i % HUES.length]}`} />
-                  <span className="text-2xl">{nh.profile.emojis.favorites.slice(0, 3).join(" ")}</span>
-                </div>
-                <h2 className="mt-6 font-serif text-4xl leading-none">{nh.name}</h2>
-                <p className="mt-1 font-mono text-[11px] text-white/40">
-                  {nh.profile.language} · {nh.examples.length} {dict.generate.examples}
-                </p>
-                <p className="mt-4 line-clamp-3 flex-1 text-white/60">{nh.profile.summary}</p>
-                <span className="mt-6 font-mono text-xs text-acid opacity-60 transition group-hover:opacity-100">
-                  {dict.generate.openProfile}
+              <span className={`animate-morph size-9 shrink-0 bg-gradient-to-br ${HUES[i % HUES.length]}`} />
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{x.name}</span>
+                <span className="block truncate font-mono text-[10px] text-white/40">
+                  v{x.version} · {x.examples.length} {dict.generate.examples}
                 </span>
-              </Link>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </main>
-  );
-}
-
-export function NotHumanDetail({ id }: { id: string }) {
-  const { t: dict } = useI18n();
-  const { list, error, reload } = useNotHumans();
-  if (list === null) return null;
-  const nh = list.find((x) => x.id === id);
-
-  return (
-    <main className="mx-auto max-w-6xl px-4 pb-32 pt-6 sm:px-10">
-      <Link href="/app/explore" className="font-mono text-xs text-white/40 transition hover:text-acid">
-        {dict.common.back}
-      </Link>
-      {error && !nh ? (
-        <StoreErrorNotice error={error} reload={reload} />
-      ) : !nh ? (
-        <p className="mt-16 font-serif text-4xl">{dict.explore.notFound}</p>
-      ) : (
-        <Detail nh={nh} />
-      )}
-    </main>
-  );
-}
-
-function Detail({ nh }: { nh: NotHuman }) {
-  const { t: dict } = useI18n();
-  const router = useRouter();
-  const [deleteError, setDeleteError] = useState<StoreError | null>(null);
-  return (
-    <div className="mt-10">
-      <div className="mb-10 flex flex-wrap gap-3">
+              </span>
+            </motion.button>
+          );
+        })}
         <Link
-          href={`/app/chat?nh=${nh.id}`}
-          className="rounded-full bg-acid px-5 py-2 text-sm font-medium text-ink shadow-[0_0_40px_-10px_rgba(198,255,61,0.6)] transition hover:scale-[1.03]"
+          href="/app/new"
+          className="flex shrink-0 items-center gap-2 rounded-2xl border border-dashed border-white/15 px-3 py-2.5 text-sm text-white/55 transition hover:border-acid/50 hover:text-acid lg:mt-1"
         >
-          {dict.chat.open}
+          <span className="flex size-9 items-center justify-center rounded-full border border-white/15 text-lg">+</span>
+          {t.create}
         </Link>
-        <DownloadButton nh={nh} />
-        <button
-          onClick={() => {
-            if (!confirm(dict.profile.confirmDelete)) return;
-            deleteNotHuman(nh.id)
-              .then(() => router.push("/app/explore"))
-              .catch((e) => setDeleteError(e instanceof StoreError ? e : new StoreError("generic", String(e))));
-          }}
-          className="rounded-full border border-rose/30 px-4 py-2 text-sm text-rose transition hover:bg-rose/10"
-        >
-          {dict.profile.delete}
-        </button>
       </div>
-      {deleteError && <StoreErrorNotice error={deleteError} reload={() => setDeleteError(null)} />}
-      <ShareLink id={nh.id} />
-      <VersionHistory nh={nh} />
-      <ProfileView nh={nh} />
-    </div>
-  );
-}
-
-function DownloadButton({ nh }: { nh: NotHuman }) {
-  const t = useI18n().t.generate;
-  return (
-    <button
-      onClick={() => downloadJson(nh)}
-      className="rounded-full border border-white/15 px-4 py-2 text-sm transition hover:border-acid hover:text-acid"
-    >
-      {t.download}
-    </button>
+      <div className="hidden px-1 pt-2 lg:block">
+        <ImportJsonButton />
+      </div>
+    </aside>
   );
 }

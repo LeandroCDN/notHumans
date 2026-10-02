@@ -38,6 +38,12 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   hasta 40 turnos. Se crea/copia/desactiva desde el perfil del notHuman.
 - La mecánica del chat (espera por varios mensajes, burbujas de a una, cola) está en
   `components/chat/use-conversation.ts`, compartida entre el test drive y el link público.
+- Secciones de la app: **Crear** (`/app/new`) · **notHumans** (`/app/explore`) · **Puestos** (`/app/jobs`).
+  notHumans fusiona Explorar + test drive + perfil: lista a la izquierda (`explore-view.tsx`), chat en el centro y
+  panel con pestañas Chat/Perfil/Puesto (`workspace.tsx`, `profile-side.tsx`); estado en la URL
+  (`?nh=…&tab=chat|profile|job`). `/app/chat` y `/app/n/<id>` redirigen ahí.
+- Puestos (lo próximo): **Crear puesto solo crea el puesto**; se le asigna a un notHuman desde la sección notHumans
+  (pestaña Puesto). Mockup aprobado: https://claude.ai/artifact/V7fHFE24RBU8c8mmFAPWw2
 - localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 
 ## Estado y próximos pasos
@@ -53,4 +59,5 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
    Guardado optimista: si la versión vigente cambió mientras tanto → 409 y se pide recargar.
 7. ✅ Notas de voz: transcripción de audios del .zip con Groq Whisper
 8. ✅ Link público para chatear con un notHuman sin cuenta
-9. ⏭️ El "puesto de trabajo" y lo demás de `TODO.md`
+9. ✅ Sección notHumans: Explorar + test drive + perfil en una sola vista
+10. ⏭️ Puestos (crear, catálogo con columnas visibles/privadas, asignar desde notHumans) y lo demás de `TODO.md`

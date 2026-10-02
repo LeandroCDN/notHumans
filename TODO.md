@@ -8,6 +8,13 @@
 - [x] Botón para subir los notHumans que quedaron en localStorage, e "Importar JSON"
 - [x] Cada cambio de perfil/ejemplos crea una versión nueva (v1, v2…) y se puede volver atrás
 
+## Orden acordado
+1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
+2. [ ] Puestos: crear (contame el laburo → la IA ordena; reglas, horario, pasar a una persona; catálogo desde
+   Excel/CSV con columnas visibles/privadas, el notHuman busca en vez de leer todo). Se asigna desde notHumans.
+3. [ ] Conexiones: Google Sheets y Calendar con cuenta de servicio (solo lectura) + mail propio del puesto
+4. [ ] WhatsApp: API oficial (Cloud API), conversaciones guardadas por número de cliente, pasar a una persona
+
 ## Después: el puesto de trabajo
 La idea: el notHuman es **cómo habla**; el puesto es **dónde trabaja y con qué reglas**. Separados, la misma
 persona puede atender varios negocios y cambiar una regla no obliga a regenerar la personalidad.

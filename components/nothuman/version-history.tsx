@@ -39,7 +39,7 @@ export function VersionHistory({ nh }: { nh: NotHuman }) {
   }
 
   return (
-    <div className="mb-10">
+    <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-5">
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 font-mono text-xs text-white/50 transition hover:text-acid"

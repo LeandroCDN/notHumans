@@ -1,6 +1,7 @@
-import { TestDrive } from "@/components/chat/test-drive";
+import { redirect } from "next/navigation";
 
+// El test drive ahora vive en la sección notHumans.
 export default async function ChatPage({ searchParams }: { searchParams: Promise<{ nh?: string }> }) {
   const { nh } = await searchParams;
-  return <TestDrive initialId={nh} />;
+  redirect(nh ? `/app/explore?nh=${encodeURIComponent(nh)}` : "/app/explore");
 }

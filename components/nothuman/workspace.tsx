@@ -1,70 +1,43 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_MODEL_ID, MODELS, findModel } from "@/lib/llm/models";
 import { type ChatReply, formatCost, sendChat } from "@/lib/nothuman/chat";
 import { GenerationError } from "@/lib/nothuman/generate";
 import type { NotHuman } from "@/lib/nothuman/schema";
 import { findLeak } from "@/lib/nothuman/pipeline";
-import { StoreError, refreshNotHumans, saveCorrections, useNotHumans } from "@/lib/nothuman/store";
+import { StoreError, refreshNotHumans, saveCorrections } from "@/lib/nothuman/store";
+import { Bubble, Dots } from "../chat/bubbles";
+import { type ConvTurn, useConversation } from "../chat/use-conversation";
 import { useI18n } from "../i18n";
-import { WithPlaceholders } from "../nothuman/profile-view";
-import { ShareButton } from "../nothuman/share-link";
-import { StoreErrorNotice, storeErrorMessage } from "../nothuman/store-ui";
-import { Bubble, Dots } from "./bubbles";
-import { type ConvTurn, useConversation } from "./use-conversation";
+import { ProfileSide } from "./profile-side";
+import { WithPlaceholders } from "./profile-view";
+import { ShareButton } from "./share-link";
+import { storeErrorMessage } from "./store-ui";
 
-const HUES = ["from-acid to-emerald-400", "from-violet to-rose", "from-rose to-amber-300", "from-sky-400 to-violet"];
+// El espacio de trabajo de un notHuman: el chat en el centro y un panel con pestañas al costado
+// (Chat: costo y correcciones · Perfil: quién es, versiones, link · Puesto: dónde trabaja).
 
 type Turn = ConvTurn<ChatReply>;
 
-export function TestDrive({ initialId }: { initialId?: string }) {
+export type HubTab = "chat" | "profile" | "job";
+export const HUB_TABS: HubTab[] = ["chat", "profile", "job"];
+
+type Props = {
+  nh: NotHuman;
+  /** Gradiente del avatar (clases de Tailwind). */
+  hue: string;
+  tab: HubTab;
+  onTab: (tab: HubTab) => void;
+  /** Hay correcciones sin guardar. */
+  onDirty: (dirty: boolean) => void;
+};
+
+export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
   const { t: dict } = useI18n();
   const t = dict.chat;
-  const { list, error, reload } = useNotHumans();
-
-  if (list === null) return null;
-  if (error && list.length === 0) {
-    return (
-      <main className="mx-auto max-w-4xl px-4 pt-16 sm:px-10">
-        <StoreErrorNotice error={error} reload={reload} />
-      </main>
-    );
-  }
-  if (list.length === 0) {
-    return (
-      <main className="mx-auto flex min-h-[80dvh] max-w-4xl flex-col justify-center px-4 sm:px-10">
-        <Link href="/app" className="font-mono text-xs text-white/40 transition hover:text-acid">
-          {dict.common.back}
-        </Link>
-        <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-acid">{t.eyebrow}</p>
-        <h1 className="mt-4 font-serif text-[clamp(2.8rem,8vw,6.5rem)] leading-[0.9] tracking-tight">
-          {t.noneTitle} <em className="text-acid">{t.noneAccent}</em>
-        </h1>
-        <p className="mt-6 max-w-xl text-lg text-white/55">{t.noneBody}</p>
-        <Link
-          href="/app/new"
-          className="mt-10 inline-flex self-start rounded-full bg-acid px-6 py-3 font-medium text-ink transition hover:scale-[1.03]"
-        >
-          {t.createCta}
-        </Link>
-      </main>
-    );
-  }
-
-  const nh = list.find((x) => x.id === initialId) ?? list[0];
-  // El key reinicia la conversación al cambiar de notHuman.
-  return <Drive key={nh.id} nh={nh} list={list} />;
-}
-
-function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
-  const { t: dict } = useI18n();
-  const t = dict.chat;
-  const router = useRouter();
-  const hue = HUES[Math.max(0, list.indexOf(nh)) % HUES.length];
+  const th = dict.hub;
 
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
   const [draft, setDraft] = useState("");
@@ -152,7 +125,10 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
     }
   }
 
-  // Avisar antes de irse con correcciones sin guardar.
+  // Avisarle a la vista de afuera (para no cambiar de notHuman sin querer) y antes de cerrar la pestaña.
+  useEffect(() => {
+    onDirty(pending.length > 0);
+  }, [pending.length, onDirty]);
   useEffect(() => {
     if (!pending.length) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -175,50 +151,14 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
   const nf = (n: number) => n.toLocaleString(dict.intl);
   const cacheRate = totals.input ? totals.cached / totals.input : 0;
 
+
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-10">
-      <Link href={`/app/n/${nh.id}`} className="font-mono text-xs text-white/40 transition hover:text-acid">
-        {dict.common.back}
-      </Link>
-
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <p className="mt-8 font-mono text-xs uppercase tracking-[0.2em] text-acid">{t.eyebrow}</p>
-        <h1 className="mt-3 font-serif text-[clamp(2.6rem,7vw,5.5rem)] leading-[0.9] tracking-tight">
-          {t.title} <em className="text-acid">{nh.name}</em>
-        </h1>
-        <p className="mt-3 max-w-2xl text-white/55">{t.sub}</p>
-      </motion.div>
-
-      <div className="mt-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <Picker label={t.who}>
-          {list.map((x, i) => (
-            <Pill key={x.id} group="nh" active={x.id === nh.id} onClick={() => router.replace(`/app/chat?nh=${x.id}`)}>
-              <span className={`animate-morph size-4 shrink-0 bg-gradient-to-br ${HUES[i % HUES.length]}`} />
-              {x.name}
-            </Pill>
-          ))}
-        </Picker>
-        <Picker label={t.model}>
-          {MODELS.map((m) => (
-            <Pill key={m.id} group="model" active={m.id === modelId} onClick={() => setModelId(m.id)}>
-              {m.label}
-              <span className="font-mono text-[10px] opacity-50">${m.price.cacheMiss}/M</span>
-            </Pill>
-          ))}
-        </Picker>
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_300px]">
-        {/* El teléfono */}
-        <section className="flex h-[min(72dvh,720px)] min-h-[460px] flex-col rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm">
-          <header className="relative z-20 flex items-center gap-3 border-b border-white/10 px-5 py-3.5">
+    <div className="flex min-w-0 flex-1 flex-col gap-4 xl:flex-row xl:items-start">
+        <section className="flex h-[min(80dvh,760px)] min-h-[460px] min-w-0 flex-1 flex-col rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+          <header className="relative z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 px-5 py-3.5">
             <div className={`animate-morph size-10 shrink-0 bg-gradient-to-br ${hue}`} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium leading-tight">{nh.name}</p>
+              <p className="truncate font-serif text-2xl leading-none">{nh.name}</p>
               <AnimatePresence mode="wait">
                 <motion.p
                   key={typing ? "typing" : status}
@@ -231,6 +171,21 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
                 </motion.p>
               </AnimatePresence>
             </div>
+            <label className="sr-only" htmlFor="nh-model">
+              {t.model}
+            </label>
+            <select
+              id="nh-model"
+              value={modelId}
+              onChange={(e) => setModelId(e.target.value)}
+              className="max-w-36 cursor-pointer rounded-full border border-white/10 bg-transparent px-3 py-1.5 font-mono text-[11px] text-white/70 outline-none transition hover:border-white/30 focus:border-acid/60"
+            >
+              {MODELS.map((m) => (
+                <option key={m.id} value={m.id} className="bg-ink">
+                  {m.label} · ${m.price.cacheMiss}/M
+                </option>
+              ))}
+            </select>
             <ShareButton id={nh.id} />
             {turns.length > 0 && (
               <button
@@ -347,63 +302,113 @@ function Drive({ nh, list }: { nh: NotHuman; list: NotHuman[] }) {
           </form>
         </section>
 
-        {/* Lo que cuesta */}
-        <aside className="flex flex-col gap-3">
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">{t.totals}</p>
-            <motion.p
-              key={totals.cost}
-              initial={{ opacity: 0.4, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-2 font-serif text-5xl leading-none text-acid"
+      <aside className="flex w-full shrink-0 flex-col gap-3 xl:w-[340px]">
+        <div role="tablist" aria-label={th.panel} className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+          {HUB_TABS.map((id) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => onTab(id)}
+              className={`relative isolate flex-1 rounded-full py-2 text-sm transition ${
+                tab === id ? "text-ink" : "text-white/60 hover:text-white"
+              }`}
             >
-              {formatCost(totals.cost)}
-            </motion.p>
-            <p className="mt-1 font-mono text-[11px] text-white/40">{t.turns(totals.replies)}</p>
-
-            <dl className="mt-5 grid grid-cols-3 gap-2 text-center">
-              {[
-                [t.input, totals.input],
-                [t.cached, totals.cached],
-                [t.output, totals.output],
-              ].map(([label, n]) => (
-                <div key={label} className="rounded-2xl bg-white/[0.04] px-2 py-2.5">
-                  <dd className="font-mono text-sm">{nf(n as number)}</dd>
-                  <dt className="mt-0.5 font-mono text-[10px] text-white/40">{label}</dt>
-                </div>
-              ))}
-            </dl>
-
-            <div className="mt-5">
-              <div className="flex justify-between font-mono text-[11px] text-white/45">
-                <span>{t.cacheRate}</span>
-                <span>{Math.round(cacheRate * 100)}%</span>
-              </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-                <motion.div
-                  className="h-full rounded-full bg-violet"
-                  animate={{ width: `${cacheRate * 100}%` }}
-                  transition={{ type: "spring", stiffness: 60, damping: 18 }}
+              {tab === id && (
+                <motion.span
+                  layoutId="hub-tab"
+                  className="absolute inset-0 -z-10 rounded-full bg-bone"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
                 />
+              )}
+              {th.tabs[id]}
+              {id === "chat" && pending.length > 0 && (
+                <span className="ml-1.5 inline-block size-1.5 rounded-full bg-violet align-middle" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-col gap-3"
+          >
+            {tab === "chat" && (
+              <>
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">{t.totals}</p>
+                  <motion.p
+                    key={totals.cost}
+                    initial={{ opacity: 0.4, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2 font-serif text-5xl leading-none text-acid"
+                  >
+                    {formatCost(totals.cost)}
+                  </motion.p>
+                  <p className="mt-1 font-mono text-[11px] text-white/40">{t.turns(totals.replies)}</p>
+
+                  <dl className="mt-5 grid grid-cols-3 gap-2 text-center">
+                    {[
+                      [t.input, totals.input],
+                      [t.cached, totals.cached],
+                      [t.output, totals.output],
+                    ].map(([label, n]) => (
+                      <div key={label} className="rounded-2xl bg-white/[0.04] px-2 py-2.5">
+                        <dd className="font-mono text-sm">{nf(n as number)}</dd>
+                        <dt className="mt-0.5 font-mono text-[10px] text-white/40">{label}</dt>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="mt-5">
+                    <div className="flex justify-between font-mono text-[11px] text-white/45">
+                      <span>{t.cacheRate}</span>
+                      <span>{Math.round(cacheRate * 100)}%</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <motion.div
+                        className="h-full rounded-full bg-violet"
+                        animate={{ width: `${cacheRate * 100}%` }}
+                        transition={{ type: "spring", stiffness: 60, damping: 18 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Corrections
+                  name={nh.name}
+                  version={nh.version}
+                  pending={pending.length}
+                  state={saveState}
+                  onSave={() => void saveVersion()}
+                  onReload={() => {
+                    refreshNotHumans();
+                    setSaveState(null);
+                  }}
+                />
+                <p className="px-2 font-mono text-[10px] leading-relaxed text-white/30">{t.priceNote}</p>
+                <p className="px-2 text-xs leading-relaxed text-white/40">{t.placeholderHint}</p>
+              </>
+            )}
+            {tab === "profile" && <ProfileSide nh={nh} />}
+            {tab === "job" && (
+              <div className="rounded-[28px] border border-dashed border-white/15 p-6 text-center">
+                <p className="font-serif text-3xl leading-tight">{th.jobSoonTitle}</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/55">{th.jobSoonBody}</p>
+                <span className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 font-mono text-[11px] text-white/40">
+                  <span className="size-1.5 animate-pulse rounded-full bg-violet" />
+                  {dict.common.soon}
+                </span>
               </div>
-            </div>
-          </div>
-          <Corrections
-            name={nh.name}
-            version={nh.version}
-            pending={pending.length}
-            state={saveState}
-            onSave={() => void saveVersion()}
-            onReload={() => {
-              refreshNotHumans();
-              setSaveState(null);
-            }}
-          />
-          <p className="px-2 font-mono text-[10px] leading-relaxed text-white/30">{t.priceNote}</p>
-          <p className="px-2 text-xs leading-relaxed text-white/40">{t.placeholderHint}</p>
-        </aside>
-      </div>
-    </main>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </aside>
+    </div>
   );
 }
 
@@ -628,36 +633,5 @@ function Corrections(props: {
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-function Picker({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
-  );
-}
-
-type PillProps = { group: string; active: boolean; onClick: () => void; children: React.ReactNode };
-
-function Pill({ group, active, onClick, children }: PillProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative isolate flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition ${
-        active ? "border-acid text-ink" : "border-white/15 text-white/70 hover:border-white/35"
-      }`}
-    >
-      {active && (
-        <motion.span
-          layoutId={`pill-${group}`}
-          className="absolute inset-0 -z-10 rounded-full bg-acid"
-          transition={{ type: "spring", stiffness: 400, damping: 32 }}
-        />
-      )}
-      {children}
-    </button>
   );
 }

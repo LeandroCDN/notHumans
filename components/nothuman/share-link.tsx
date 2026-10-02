@@ -57,7 +57,7 @@ export function ShareLink({ id }: { id: string }) {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`mb-10 rounded-[28px] border p-5 transition-colors ${
+      className={`rounded-[28px] border p-5 transition-colors ${
         share ? "border-acid/30 bg-acid/[0.05]" : "border-white/10 bg-white/[0.02]"
       }`}
     >
@@ -214,7 +214,7 @@ export function ShareButton({ id }: { id: string }) {
                   >
                     {t.open}
                   </a>
-                  <Link href={`/app/n/${id}`} className="ml-auto font-mono text-[11px] text-white/40 transition hover:text-acid">
+                  <Link href={`/app/explore?nh=${id}&tab=profile`} className="ml-auto font-mono text-[11px] text-white/40 transition hover:text-acid">
                     {t.manage}
                   </Link>
                 </div>

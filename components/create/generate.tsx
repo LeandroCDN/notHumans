@@ -189,12 +189,12 @@ function Born({ nh, saveError }: { nh: NotHuman; saveError?: string }) {
           {!saveError && (
             <>
               <Link
-                href={`/app/n/${nh.id}`}
+                href={`/app/explore?nh=${nh.id}&tab=profile`}
                 className="rounded-full border border-ink/25 px-4 py-2 text-sm transition hover:bg-ink/10"
               >
                 {t.openProfile}
               </Link>
-              <Link href={`/app/chat?nh=${nh.id}`} className="rounded-full bg-ink px-4 py-2 text-sm text-acid">
+              <Link href={`/app/explore?nh=${nh.id}`} className="rounded-full bg-ink px-4 py-2 text-sm text-acid">
                 {chat.open}
               </Link>
             </>

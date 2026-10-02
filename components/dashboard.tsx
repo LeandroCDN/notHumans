@@ -55,17 +55,17 @@ export function Dashboard({ user }: { user: string }) {
             delay={base + 0.75}
             accent="rgba(139,92,246,0.28)"
           >
-            <Crowd />
+            <Talk />
           </TiltCard>
           <TiltCard
-            href="/app/chat"
+            href="/app/jobs"
             index="03"
-            title={t.dashboard.chatTitle}
-            body={t.dashboard.chatBody}
+            title={t.dashboard.jobsTitle}
+            body={t.dashboard.jobsBody}
             delay={base + 0.9}
             accent="rgba(255,77,141,0.24)"
           >
-            <Talk />
+            <Manual />
           </TiltCard>
         </div>
       </main>
@@ -151,31 +151,6 @@ function Birth() {
   );
 }
 
-const GHOSTS = [
-  { x: -70, y: 10, size: 72, from: "from-violet", to: "to-rose", d: 0 },
-  { x: 0, y: -20, size: 88, from: "from-rose", to: "to-amber-300", d: 0.6 },
-  { x: 70, y: 12, size: 68, from: "from-sky-400", to: "to-violet", d: 1.2 },
-];
-
-/** Una pequeña multitud de gente que no existe. */
-function Crowd() {
-  return (
-    <div className="relative h-40 w-64">
-      {GHOSTS.map((g, i) => (
-        <motion.div
-          key={i}
-          className={`animate-morph absolute left-1/2 top-1/2 bg-gradient-to-br ${g.from} ${g.to} opacity-90 transition-all duration-700 group-hover:opacity-100`}
-          style={{ width: g.size, height: g.size, marginLeft: g.x - g.size / 2, marginTop: g.y - g.size / 2, animationDelay: `${-i * 3}s` }}
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: g.d }}
-        >
-          <span className="flex h-full items-center justify-center font-mono text-sm text-ink/70">?</span>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
 /** Un ida y vuelta de WhatsApp que se escribe solo. */
 function Talk() {
   const bubbles = [
@@ -195,6 +170,31 @@ function Talk() {
           animate={{ scale: [0.4, 1, 1, 0.4], opacity: [0, 1, 1, 0] }}
           transition={{ duration: 4, times: [0, 0.12, 0.85, 1], repeat: Infinity, delay: b.d, repeatDelay: 0.6 }}
         />
+      ))}
+    </div>
+  );
+}
+
+/** El manual del puesto: una hoja que se va completando sola. */
+function Manual() {
+  const lines = ["w-28", "w-36", "w-24", "w-32"];
+  return (
+    <div className="w-52 -rotate-3 rounded-2xl bg-bone p-4 shadow-[0_20px_60px_-20px_rgba(255,77,141,0.5)] transition-transform duration-700 group-hover:rotate-0">
+      <div className="mb-3 h-2 w-16 rounded-full bg-ink/70" />
+      {lines.map((w, i) => (
+        <div key={i} className="mt-2 flex items-center gap-2">
+          <motion.span
+            className="size-2.5 rounded-full bg-rose"
+            animate={{ scale: [0, 1, 1, 0] }}
+            transition={{ duration: 4, times: [0, 0.1, 0.9, 1], repeat: Infinity, delay: i * 0.35, repeatDelay: 0.4 }}
+          />
+          <motion.span
+            className={`h-2 rounded-full bg-ink/25 ${w}`}
+            style={{ originX: 0 }}
+            animate={{ scaleX: [0, 1, 1, 0] }}
+            transition={{ duration: 4, times: [0, 0.12, 0.9, 1], repeat: Infinity, delay: i * 0.35, repeatDelay: 0.4 }}
+          />
+        </div>
       ))}
     </div>
   );

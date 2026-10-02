@@ -1,5 +1,6 @@
-import { ExploreView } from "@/components/nothuman/explore-view";
+import { NotHumansHub } from "@/components/nothuman/explore-view";
 
-export default function ExploreNotHumans() {
-  return <ExploreView />;
+export default async function NotHumansPage({ searchParams }: { searchParams: Promise<{ nh?: string; tab?: string }> }) {
+  const { nh, tab } = await searchParams;
+  return <NotHumansHub initialId={nh} initialTab={tab} />;
 }
