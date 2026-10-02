@@ -23,10 +23,13 @@ export function FileList({
   entries,
   owner,
   onRemove,
+  extra,
 }: {
   entries: FileEntry[];
   owner: string | null;
   onRemove: (key: string) => void;
+  /** Algo más adentro de la tarjeta de cada archivo (las notas de voz). */
+  extra?: (key: string) => React.ReactNode;
 }) {
   const t = useI18n().t.create.files;
   return (
@@ -70,6 +73,7 @@ export function FileList({
               >
                 ✕
               </button>
+              {extra?.(entry.key)}
             </motion.li>
           );
         })}

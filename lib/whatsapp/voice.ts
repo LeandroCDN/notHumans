@@ -11,6 +11,8 @@ const OMITTED_AUDIO = /^(audio|nota de voz|voice message) (omitid[oa]|omitted)$/
 export type VoiceNote = {
   /** Identifica el audio entre todos los archivos subidos: clave del archivo + nombre del adjunto. */
   id: string;
+  /** Clave del archivo subido del que viene. */
+  entry: string;
   file: string;
   author: string;
   bytes: Uint8Array;
@@ -24,7 +26,7 @@ export function voiceNotes(chat: ParsedChat, entryKey: string, audios: Record<st
   for (const m of chat.messages) {
     if (m.kind !== "media" || !m.attachment || !m.author || !AUDIO_FILE.test(m.attachment)) continue;
     const bytes = audios[m.attachment];
-    if (bytes) out.push({ id: voiceId(entryKey, m.attachment), file: m.attachment, author: m.author, bytes });
+    if (bytes) out.push({ id: voiceId(entryKey, m.attachment), entry: entryKey, file: m.attachment, author: m.author, bytes });
   }
   return out;
 }

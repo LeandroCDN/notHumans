@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { buildConversations, detectOwner, summarize, usableChats } from "@/lib/whatsapp/analyze";
 import { type ChatFile, readChatFiles } from "@/lib/whatsapp/files";
 import { parseExport } from "@/lib/whatsapp/parse";
@@ -14,7 +14,7 @@ import { BusinessForm, EMPTY_BUSINESS } from "./business-form";
 import { ConversationViewer } from "./conversation-viewer";
 import { Dropzone } from "./dropzone";
 import { GenerateSection } from "./generate";
-import { VoiceNotes } from "./voice-notes";
+import { type FileVoice, FileVoiceRow, TranscribeAll, useTranscriber } from "./voice-notes";
 
 const reveal = {
   initial: { opacity: 0, y: 40, filter: "blur(10px)" },
@@ -38,18 +38,19 @@ export function CreateView() {
     [entries, transcripts],
   );
   const chats = useMemo(() => shown.flatMap((e) => ("chat" in e ? [e.chat] : [])), [shown]);
+  // Las notas de voz de cada archivo (solo de chats 1 a 1, que son los que se usan).
   const voice = useMemo(() => {
-    const notes = [];
-    let missing = 0;
+    const byFile: Record<string, FileVoice> = {};
     for (const e of entries) {
       if (!("chat" in e) || !usableChats([e.chat]).length) continue;
-      notes.push(...voiceNotes(e.chat, e.key, e.audios ?? {}));
-      missing += missingVoiceNotes(e.chat, e.audios ?? {});
+      byFile[e.key] = { notes: voiceNotes(e.chat, e.key, e.audios ?? {}), missing: missingVoiceNotes(e.chat, e.audios ?? {}) };
     }
     const langs = entries.flatMap((e) => ("chat" in e && e.chat.language !== "unknown" ? [e.chat.language] : []));
     const language = langs.length ? (langs.filter((l) => l === "es").length >= langs.length / 2 ? "es" : "en") : undefined;
-    return { notes, missing, language } as const;
+    return { byFile, language } as const;
   }, [entries]);
+  const onTranscript = useCallback((id: string, text: string) => setTranscripts((prev) => ({ ...prev, [id]: text })), []);
+  const transcriber = useTranscriber(voice.language, onTranscript);
   const guess = useMemo(() => detectOwner(chats), [chats]);
   const owner = pickedOwner && guess.candidates.some((c) => c.name === pickedOwner) ? pickedOwner : guess.owner;
   const conversations = useMemo(() => (owner ? buildConversations(chats, owner) : []), [chats, owner]);
@@ -114,14 +115,13 @@ export function CreateView() {
                 entries={shown}
                 owner={owner}
                 onRemove={(key) => setEntries((prev) => prev.filter((e) => e.key !== key))}
+                extra={(key) =>
+                  voice.byFile[key] && (
+                    <FileVoiceRow voice={voice.byFile[key]} transcripts={transcripts} transcriber={transcriber} />
+                  )
+                }
               />
-              <VoiceNotes
-                notes={voice.notes}
-                missing={voice.missing}
-                language={voice.language}
-                transcripts={transcripts}
-                onTranscript={(id, text) => setTranscripts((prev) => ({ ...prev, [id]: text }))}
-              />
+              <TranscribeAll files={Object.values(voice.byFile)} transcripts={transcripts} transcriber={transcriber} />
             </>
           ) : (
             <div className="space-y-4">
