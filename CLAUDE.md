@@ -18,7 +18,19 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   (los datos del negocio vienen de una fuente externa del cliente).
 - Personalidad separada de los datos: los ejemplos guardan marcadores (`{price}`, `{product}`…) en vez de
   datos concretos, para que la persona sea reutilizable. `findLeak` descarta ejemplos con datos sueltos.
-- Login con cuentas fijas desde `AUTH_USERS` (cookie firmada con HMAC). Sin sistema de usuarios.
+- Cuentas (`lib/auth.ts`, `lib/db/profiles.ts`): se entra con Google vía Supabase Auth (PKCE a mano en
+  `lib/oauth.ts`, `/auth/google` → `/auth/callback`; solo se usa para saber quién es) o con las cuentas fijas de
+  `AUTH_USERS` (de antes; pueden vincular Google). La sesión es nuestra: cookie firmada con HMAC con el id del perfil.
+  Google se muestra con `AUTH_GOOGLE=1`; sin Supabase (desarrollo / `LLM_MOCK=1`) "Seguir con Google" crea una
+  cuenta de prueba (`/auth/google?as=mail`). Admin: `ADMINS` (mails o cuentas fijas) o la primera de `AUTH_USERS`.
+- La cuenta es abierta; el **plan** controla el acceso al modelo (`lib/plans.ts`: Free sin IA, Pro, Business, Admin;
+  topes en código). Todo lo que gasta IA pasa por `charge`/`metered` (`lib/account.ts`): reserva cupo con la función
+  `consume_usage` (atómica) antes de llamar y anota costo/tokens en `usage` después; si falla, se devuelve. Una
+  generación descuenta al empezar (`/api/generate/start` da un ticket firmado que piden extract/profile; si falla
+  antes del perfil, `/api/generate/cancel` la devuelve). El link público descuenta del dueño. Sin cupo → 402
+  `{error:"limit", kind}`. Planes a mano en `/app/admin` (sin cobros todavía). En el navegador: `useMe()` (`lib/me.ts`).
+- Cada cuenta ve solo lo suyo: notHumans y puestos tienen `user_id` y todos los métodos de los repos lo piden
+  (`getAny` solo para el link público). Seguimos con RLS sin políticas: el navegador nunca habla con la base.
 - Proveedor de IA: DeepSeek (el usuario no pudo pagar Anthropic). Interfaz en `lib/llm/` para sumar otros.
   Modelos actuales: `deepseek-flash` y `deepseek-v4-pro`; el modo thinking viene prendido por defecto y lo apagamos
   salvo que se elija una opción "thinking".
@@ -68,4 +80,6 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 8. ✅ Link público para chatear con un notHuman sin cuenta
 9. ✅ Sección notHumans: Explorar + test drive + perfil en una sola vista
 10. ✅ Puestos, entrega 1: crear/editar (contame el laburo + audio, IA que ordena), asignar, chat y link con puesto
-11. ⏭️ Puestos, entrega 2: catálogo desde Excel/CSV con columnas visibles/privadas y búsqueda; después `TODO.md`
+11. ✅ Cuentas con Google + planes (Free/Pro/Business/Admin) + consumo por mes + panel de admin
+12. ⏭️ Privacidad (privado/público) y Comunidad (Míos · Comunidad, 3 respuestas para probar); después
+    Puestos entrega 2 (catálogo Excel/CSV). Ver `TODO.md`

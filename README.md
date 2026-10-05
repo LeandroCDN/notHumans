@@ -8,14 +8,17 @@ Personas de IA que hablan como humanos. Esta es la v0.0.0.0.0.01: una web para p
 
 ```bash
 npm install
-cp .env.example .env.local   # completá AUTH_USERS, AUTH_SECRET y DEEPSEEK_API_KEY
+cp .env.example .env.local   # completá AUTH_SECRET, AUTH_USERS y DEEPSEEK_API_KEY
 npm run dev
 ```
 
 | Variable | Para qué |
 |---|---|
-| `AUTH_USERS` | Cuentas fijas, `usuario:contraseña` separadas por coma |
 | `AUTH_SECRET` | String largo y random (`openssl rand -hex 32`) |
+| `AUTH_USERS` | Cuentas fijas (de antes de Google), `usuario:contraseña` separadas por coma. Arrancan en Pro |
+| `ADMINS` | Mails de Google o cuentas fijas que son admin. Sin esto, la primera de `AUTH_USERS` |
+| `AUTH_GOOGLE=1` | Muestra "Seguir con Google" (Supabase Auth). Prenderlo con el proveedor ya configurado |
+| `SUPABASE_PUBLISHABLE_KEY` | Publishable key de Supabase, para el login con Google |
 | `DEEPSEEK_API_KEY` | Key de DeepSeek para generar notHumans |
 | `DEEPSEEK_MODEL` | Opcional: modelo de la generación (default `deepseek-flash`) |
 | `SUPABASE_URL` | URL del proyecto de Supabase |
@@ -34,6 +37,13 @@ npm run dev
 6. **Link público:** desde el perfil, "Crear link público" da un `/c/<token>` para que cualquiera chatee con el notHuman sin cuenta (con tope de respuestas por link y de mensajes por minuto). Se puede desactivar.
 
 7. **Puestos** (`/app/jobs`): dónde trabaja un notHuman. "Contame el laburo" (texto o audio) y la IA lo ordena en negocio, reglas, horario y cuándo pasar a una persona; el "manual del empleado" muestra lo que va a leer. Se asigna desde notHumans (pestaña Puesto) y el chat y el link público contestan con esas reglas.
+
+8. **Cuentas y planes:** cualquiera entra con Google (Supabase Auth, `/auth/google` → `/auth/callback`) y arranca
+   en **Free**: ve la app pero no usa IA. El plan (`lib/plans.ts`: Free, Pro, Business, Admin) define topes por mes
+   (generaciones, respuestas, minutos de audio) y cantidades (notHumans, puestos). Cada llamada a la IA reserva cupo
+   antes (`charge` en `lib/account.ts`, función `consume_usage` en la base) y anota lo que costó en `usage`; si
+   falla, se devuelve. El admin asigna planes a mano en `/app/admin` (todavía no hay cobros). Cada cuenta ve solo
+   lo suyo.
 
 ## Tests
 

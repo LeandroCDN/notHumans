@@ -12,6 +12,55 @@ export function isLocale(v: unknown): v is Locale {
 type ChatLine = { from: "client" | "nh"; text: string };
 export type DemoScript = { persona: string; hue: string; lines: ChatLine[] };
 
+/** Qué tope del plan se alcanzó (lo que manda el server en un 402) → qué decirle a la persona. */
+function limitEn(kind: string): string {
+  const tail = " Request access or upgrade from your dashboard.";
+  switch (kind) {
+    case "generation":
+      return "You've used this month's notHuman generations." + tail;
+    case "reply":
+      return "You've used this month's replies." + tail;
+    case "audio":
+      return "You've used this month's audio minutes." + tail;
+    case "structure":
+      return "You've used this month's AI job organizing." + tail;
+    case "nothumans":
+      return "Your plan has no room for another notHuman. Delete one or upgrade.";
+    case "jobs":
+      return "Your plan has no room for another job." + tail;
+    case "shareLinks":
+      return "Public links are part of Pro." + tail;
+    case "proModel":
+      return "V4 Pro is part of the Business plan.";
+    default:
+      return "You hit this month's usage cap. It resets at the start of next month.";
+  }
+}
+
+function limitEs(kind: string): string {
+  const tail = " Pedí acceso o mejorá el plan desde el inicio.";
+  switch (kind) {
+    case "generation":
+      return "Ya usaste las generaciones de notHumans de este mes." + tail;
+    case "reply":
+      return "Ya usaste las respuestas de este mes." + tail;
+    case "audio":
+      return "Ya usaste los minutos de audio de este mes." + tail;
+    case "structure":
+      return "Ya usaste las veces que la IA ordena puestos este mes." + tail;
+    case "nothumans":
+      return "Tu plan no tiene lugar para otro notHuman. Borrá uno o mejorá el plan.";
+    case "jobs":
+      return "Tu plan no tiene lugar para otro puesto." + tail;
+    case "shareLinks":
+      return "Los links públicos son parte de Pro." + tail;
+    case "proModel":
+      return "V4 Pro es parte del plan Business.";
+    default:
+      return "Llegaste al tope de consumo del mes. Se renueva a principio del mes que viene.";
+  }
+}
+
 const en = {
   intl: "en-US",
   meta: { description: "They talk like humans. They're not." },
@@ -107,8 +156,72 @@ const en = {
     noConnection: "Can't reach the server.",
     missingConfig: (vars: string[]) => `${vars.join(" and ")} ${vars.length > 1 ? "are" : "is"} not set on the server.`,
     serverError: (status: number) => `Server error (${status}).`,
+    google: "Continue with Google",
+    googleSub: "Log in or create your account in one click.",
+    or: "or with an ID and password",
+    googleError: "Couldn't log in with Google. Try again.",
+    unavailable: "Logging in with Google isn't enabled yet.",
   },
   header: { logout: "log out", nav: { create: "Create", nothumans: "notHumans", jobs: "Jobs" } },
+  account: {
+    plans: { free: "Free", pro: "Pro", business: "Business", admin: "Admin" } as Record<string, string>,
+    menu: "Account",
+    plan: (name: string) => `${name} plan`,
+    adminPanel: "Admin panel",
+    linkGoogle: "Link Google",
+    linkGoogleSub: "Next time, log in with Google.",
+    linked: {
+      ok: "Google linked ✓ Next time you can log in with Google.",
+      taken: "That Google account already belongs to another notHumans account.",
+      error: "Couldn't link Google. Try again.",
+    } as Record<string, string>,
+    expired: "Your plan expired: the account works as Free until it's renewed (nothing gets deleted).",
+    meters: {
+      title: "This month",
+      nothumans: "notHumans",
+      generations: "generations",
+      replies: "replies",
+      audio: "audio min",
+      jobs: "jobs",
+      unlimited: "unlimited",
+      resets: (date: string) => `resets ${date}`,
+    },
+    free: {
+      eyebrow: "free account",
+      title: "Your account is ready.",
+      accent: "The AI comes next.",
+      body: "Creating notHumans, jobs and chatting with them uses AI, and that's part of Pro. Request access and we'll turn it on for you.",
+      request: "Request access →",
+      requested: "Access requested ✓",
+      requestedSub: "We'll let you know as soon as it's on.",
+    },
+    gate: {
+      create: "Creating notHumans is part of Pro.",
+      jobs: "Jobs are part of Pro.",
+      createFull: "Your plan has no room for another notHuman this month.",
+      locked: "🔒 Business",
+    },
+  },
+  admin: {
+    eyebrow: "admin",
+    title: "Accounts",
+    accent: "& plans.",
+    sub: "Plans are assigned by hand for now: there are no payments yet. Usage is for this month.",
+    requests: (n: number) => (n === 1 ? "1 access request" : `${n} access requests`),
+    requested: "asked for access",
+    search: "Search name or email…",
+    cols: { account: "Account", plan: "Plan", nothumans: "notHumans", usage: "Usage this month", cost: "Cost" },
+    usage: (g: string, r: string, a: string) => `${g} gen · ${r} replies · ${a} audio min`,
+    google: "Google",
+    legacy: "password",
+    you: "you",
+    saved: "Saved ✓",
+    failed: "Couldn't save",
+    total: (n: number, usd: string) => `${n} accounts · ${usd} spent this month`,
+    waitlist: (n: number) => `Waitlist · ${n}`,
+    hasAccount: "has an account",
+    empty: "No one here yet.",
+  },
   hub: {
     listTitle: "Your notHumans",
     create: "Create notHuman",
@@ -269,6 +382,7 @@ const en = {
       conflict: "Someone saved another version in the meantime. Reload to see it before saving yours.",
       leak: (what: string) => `There's real data in there (${what}). Use placeholders like {price} or {address}.`,
       generic: (detail: string) => `Couldn't reach the database: ${detail}`,
+      limit: (kind: string) => limitEn(kind),
     },
     retry: "Try again",
     leftovers: (n: number) =>
@@ -588,8 +702,72 @@ const es: Dict = {
     noConnection: "No hay conexión con el servidor.",
     missingConfig: (vars) => `Falta configurar ${vars.join(" y ")} en el servidor.`,
     serverError: (status) => `Error del servidor (${status}).`,
+    google: "Seguir con Google",
+    googleSub: "Entrá o creá tu cuenta en un clic.",
+    or: "o con ID y contraseña",
+    googleError: "No se pudo entrar con Google. Probá de nuevo.",
+    unavailable: "Entrar con Google todavía no está habilitado.",
   },
   header: { logout: "salir", nav: { create: "Crear", nothumans: "notHumans", jobs: "Puestos" } },
+  account: {
+    plans: { free: "Free", pro: "Pro", business: "Business", admin: "Admin" },
+    menu: "Cuenta",
+    plan: (name) => `Plan ${name}`,
+    adminPanel: "Panel de admin",
+    linkGoogle: "Vincular Google",
+    linkGoogleSub: "La próxima, entrá con Google.",
+    linked: {
+      ok: "Google vinculado ✓ La próxima podés entrar con Google.",
+      taken: "Esa cuenta de Google ya es de otra cuenta de notHumans.",
+      error: "No se pudo vincular Google. Probá de nuevo.",
+    },
+    expired: "Se venció tu plan: la cuenta funciona como Free hasta que se renueve (no se borra nada).",
+    meters: {
+      title: "Este mes",
+      nothumans: "notHumans",
+      generations: "generaciones",
+      replies: "respuestas",
+      audio: "min de audio",
+      jobs: "puestos",
+      unlimited: "ilimitado",
+      resets: (date) => `se renueva el ${date}`,
+    },
+    free: {
+      eyebrow: "cuenta free",
+      title: "Tu cuenta está lista.",
+      accent: "Falta la IA.",
+      body: "Crear notHumans, puestos y chatear con ellos usa IA, y eso es parte de Pro. Pedí acceso y te lo habilitamos.",
+      request: "Pedir acceso →",
+      requested: "Acceso pedido ✓",
+      requestedSub: "Te avisamos apenas esté habilitado.",
+    },
+    gate: {
+      create: "Crear notHumans es parte de Pro.",
+      jobs: "Los puestos son parte de Pro.",
+      createFull: "Tu plan no tiene lugar para otro notHuman este mes.",
+      locked: "🔒 Business",
+    },
+  },
+  admin: {
+    eyebrow: "admin",
+    title: "Cuentas",
+    accent: "y planes.",
+    sub: "Por ahora los planes se asignan a mano: todavía no hay cobros. El consumo es el de este mes.",
+    requests: (n) => (n === 1 ? "1 pedido de acceso" : `${n} pedidos de acceso`),
+    requested: "pidió acceso",
+    search: "Buscar nombre o mail…",
+    cols: { account: "Cuenta", plan: "Plan", nothumans: "notHumans", usage: "Consumo del mes", cost: "Costo" },
+    usage: (g, r, a) => `${g} gen · ${r} respuestas · ${a} min de audio`,
+    google: "Google",
+    legacy: "contraseña",
+    you: "vos",
+    saved: "Guardado ✓",
+    failed: "No se pudo guardar",
+    total: (n, usd) => `${n} cuentas · ${usd} gastados este mes`,
+    waitlist: (n) => `Lista de espera · ${n}`,
+    hasAccount: "tiene cuenta",
+    empty: "Todavía no hay nadie.",
+  },
   hub: {
     listTitle: "Tus notHumans",
     create: "Crear notHuman",
@@ -750,6 +928,7 @@ const es: Dict = {
       conflict: "Alguien guardó otra versión mientras tanto. Recargá para verla antes de guardar la tuya.",
       leak: (what) => `Ahí hay un dato real (${what}). Usá marcadores como {price} o {address}.`,
       generic: (detail) => `No se pudo hablar con la base: ${detail}`,
+      limit: (kind) => limitEs(kind),
     },
     retry: "Reintentar",
     leftovers: (n) =>

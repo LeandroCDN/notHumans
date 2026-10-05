@@ -12,9 +12,9 @@ const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 }
 
 export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
-  return withUser(async () => {
+  return withUser(async (user) => {
     if (!z.uuid().safeParse(id).success) return notFound();
-    const job = await jobs().get(id);
+    const job = await jobs().get(id, user.id);
     return job ? NextResponse.json(job) : notFound();
   });
 }
@@ -27,7 +27,7 @@ export async function PUT(req: Request, { params }: Ctx) {
     const parsed = Body.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: "bad_request", detail: parsed.error.message }, { status: 400 });
     const { base, name, content } = parsed.data;
-    if (!(await jobs().get(id))) return notFound();
+    if (!(await jobs().get(id, user.id))) return notFound();
     const job = await jobs().save(id, base, name, content, user);
     return job ? NextResponse.json(job) : NextResponse.json({ error: "conflict" }, { status: 409 });
   });
@@ -36,11 +36,11 @@ export async function PUT(req: Request, { params }: Ctx) {
 /** Borra el puesto; los notHumans que trabajaban ahí quedan sin puesto. */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { id } = await params;
-  return withUser(async () => {
+  return withUser(async (user) => {
     if (!z.uuid().safeParse(id).success) return notFound();
-    await jobs().remove(id);
+    await jobs().remove(id, user.id);
     // En Supabase la base ya los deja sin puesto (on delete set null); en memoria lo hacemos a mano.
-    for (const nh of await notHumans().list()) if (nh.jobId === id) await notHumans().setJob(nh.id, null);
+    for (const nh of await notHumans().list(user.id)) if (nh.jobId === id) await notHumans().setJob(nh.id, user.id, null);
     return NextResponse.json({ ok: true });
   });
 }

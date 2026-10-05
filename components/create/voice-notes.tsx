@@ -26,7 +26,9 @@ export function useTranscriber(
   language: "es" | "en" | undefined,
   onTranscript: (id: string, text: string) => void,
 ): Transcriber {
-  const t = useI18n().t.create.voice;
+  const { t: dict } = useI18n();
+  const t = dict.create.voice;
+  const limitText = dict.store.errors.limit;
   const [jobs, setJobs] = useState<Record<string, VoiceJob>>({});
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +77,13 @@ export function useTranscriber(
         });
       } catch (err) {
         const code = err instanceof TranscribeError ? err.code : "generic";
-        setError(code === "generic" ? t.errors.generic(String((err as Error).message)) : t.errors[code]);
+        setError(
+          code === "generic"
+            ? t.errors.generic(String((err as Error).message))
+            : code === "limit"
+              ? limitText((err as Error).message)
+              : t.errors[code],
+        );
         notes.forEach((n) => running.current.delete(n.id));
         setJobs((prev) => {
           const next = { ...prev };
@@ -84,7 +92,7 @@ export function useTranscriber(
         });
       }
     },
-    [language, onTranscript, t],
+    [language, onTranscript, t, limitText],
   );
 
   return { jobs, waiting, error, transcribe };

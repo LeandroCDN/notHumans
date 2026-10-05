@@ -15,7 +15,7 @@ async function load(token: string) {
   if (!TOKEN.test(token)) return null;
   try {
     const share = await shares().find(token);
-    return share ? await notHumans().get(share.nothumanId) : null;
+    return share ? ((await notHumans().getAny(share.nothumanId))?.nh ?? null) : null;
   } catch {
     return null;
   }

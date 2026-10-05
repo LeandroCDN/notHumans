@@ -1,6 +1,7 @@
 "use client";
 
 import type { JobContent } from "@/lib/job/schema";
+import { limitFrom, refreshMe } from "@/lib/me";
 import { GenerationError } from "./generate";
 import { chatPersona } from "./persona";
 import type { NotHuman, Usage } from "./schema";
@@ -34,8 +35,13 @@ export async function sendChat(
   }).catch(() => null);
   if (!res) throw new GenerationError("generic", "network");
   const data = await res.json().catch(() => ({}));
-  if (res.ok) return data as ChatReply;
+  if (res.ok) {
+    refreshMe();
+    return data as ChatReply;
+  }
   if (data.error === "missing_key" || data.error === "unauthorized") throw new GenerationError(data.error);
+  const limit = limitFrom(data);
+  if (limit) throw new GenerationError("limit", limit.kind);
   throw new GenerationError("generic", data.detail ?? `HTTP ${res.status}`);
 }
 

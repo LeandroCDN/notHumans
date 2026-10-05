@@ -1,7 +1,16 @@
 import { HomeView } from "@/components/home-view";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, loginMethods } from "@/lib/auth";
 
-export default async function Home() {
-  const user = await getSessionUser();
-  return <HomeView loggedIn={user !== null} />;
+type Props = { searchParams: Promise<{ login?: string }> };
+
+export default async function Home({ searchParams }: Props) {
+  const user = await getSessionUser().catch(() => null);
+  const { login } = await searchParams;
+  return (
+    <HomeView
+      loggedIn={user !== null}
+      methods={loginMethods()}
+      loginError={login === "error" || login === "unavailable" ? login : undefined}
+    />
+  );
 }

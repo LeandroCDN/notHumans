@@ -51,7 +51,9 @@ export function RecordButton({ lang, onText }: { lang: "es" | "en"; onText: (tex
       setError(
         data.error === "missing_stt_key" || data.error === "unauthorized"
           ? errors[data.error as "missing_stt_key" | "unauthorized"]
-          : errors.generic(data.detail ?? data.error ?? "network"),
+          : data.error === "limit"
+            ? dict.store.errors.limit(data.kind)
+            : errors.generic(data.detail ?? data.error ?? "network"),
       );
     }
     setState("idle");

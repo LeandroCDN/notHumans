@@ -6,7 +6,7 @@ import { Backdrop } from "./backdrop";
 import { HeroChat } from "./hero-chat";
 import { useI18n } from "./i18n";
 import { LanguageSwitch } from "./language-switch";
-import { LoginProvider, useLogin } from "./login";
+import { type LoginMethods, LoginProvider, useLogin } from "./login";
 import { Logo } from "./logo";
 import { Magnetic } from "./magnetic";
 import { ScrambleText } from "./scramble-text";
@@ -21,10 +21,18 @@ const rise = {
   }),
 };
 
-export function HomeView({ loggedIn }: { loggedIn: boolean }) {
+export function HomeView({
+  loggedIn,
+  methods,
+  loginError,
+}: {
+  loggedIn: boolean;
+  methods: LoginMethods;
+  loginError?: string;
+}) {
   const { t } = useI18n();
   return (
-    <LoginProvider loggedIn={loggedIn}>
+    <LoginProvider loggedIn={loggedIn} methods={methods} initialError={loginError}>
       <Backdrop />
       <Nav />
       <main>

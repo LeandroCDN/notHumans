@@ -8,6 +8,22 @@
 - [x] Botón para subir los notHumans que quedaron en localStorage, e "Importar JSON"
 - [x] Cada cambio de perfil/ejemplos crea una versión nueva (v1, v2…) y se puede volver atrás
 
+## Cuentas, privacidad y comunidad
+La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define el plan.
+1. [x] **Cuentas y planes**: Google (Supabase Auth) + cuentas fijas de antes; perfiles con plan (Free/Pro/Business/
+   Admin, en `lib/plans.ts`), consumo en `usage` con topes por mes y tope de costo oculto, panel de admin para
+   asignar planes y ver pedidos de acceso, cada cuenta ve solo lo suyo
+   - [ ] Configurar Google: cliente OAuth en Google Cloud + proveedor en Supabase + `AUTH_GOOGLE=1` en Vercel
+   - [ ] Cuando haya dominio propio: entrar con código por mail (Resend + Supabase Auth)
+   - [ ] Borrar mi cuenta (borra todo en cascada) y exportar mis datos
+2. [ ] **Privacidad**: cada notHuman 🔒 privado (default) o 🌍 público. Publicar es un paso: alias, consentimiento
+   de la persona imitada, revisión de datos sueltos (`findLeak`), vista previa. El puesto nunca es público; los
+   ejemplos solo si el dueño quiere
+3. [ ] **Comunidad**: filtro Míos · Comunidad en notHumans; los ajenos se ven en solo lectura y se prueban con
+   3 respuestas por notHuman (cuenta para el que chatea; los topes ya están en el plan Free); reportar
+4. [ ] **Cobros**: checkout (MercadoPago / Stripe) que solo escribe `plan`, `plan_source` y `plan_until`.
+   Con cobros, el período pasa a contarse desde la fecha de pago
+
 ## Orden acordado
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
 2. [x] Puestos, entrega 1: crear (contame el laburo + audio → la IA ordena; reglas, horario, pasar a una persona),

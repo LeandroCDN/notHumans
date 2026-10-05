@@ -31,6 +31,16 @@ export function findModel(id: string | undefined): ModelOption {
   return MODELS.find((m) => m.id === id) ?? MODELS.find((m) => m.id === DEFAULT_MODEL_ID)!;
 }
 
+/** El modelo por su nombre en la API (lo que devuelve cada respuesta); si no está, el de por defecto. */
+export function findModelByName(name: string | undefined): ModelOption {
+  return MODELS.find((m) => m.model === name && !m.thinking) ?? findModel(undefined);
+}
+
+/** Groq Whisper (whisper-large-v3-turbo): US$ 0,04 por hora de audio, con un mínimo de 10 s por archivo. */
+export function sttCostUsd(seconds: number): number {
+  return (Math.max(10, seconds) / 3600) * 0.04;
+}
+
 /** Costo en USD de un uso. `input` incluye los tokens que vinieron de caché. */
 export function costUsd(usage: Usage, option: ModelOption): number {
   const miss = Math.max(0, usage.input - usage.cacheHit);

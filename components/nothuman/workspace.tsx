@@ -15,6 +15,7 @@ import { useJobs } from "@/lib/job/store";
 import { JobTab } from "../job/job-tab";
 import { ProfileSide } from "./profile-side";
 import { WithPlaceholders } from "./profile-view";
+import { can, useMe } from "@/lib/me";
 import { ShareButton } from "./share-link";
 import { storeErrorMessage } from "./store-ui";
 
@@ -44,6 +45,7 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
   const job = jobs?.find((j) => j.id === nh.jobId) ?? null;
 
   const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
+  const me = useMe();
   const [draft, setDraft] = useState("");
   const [saveState, setSaveState] = useState<SaveState>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -57,6 +59,7 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
     (err) => {
       const e = err instanceof GenerationError ? err : new GenerationError("generic", String(err));
       const errors = dict.generate.errors;
+      if (e.code === "limit") return dict.store.errors.limit(e.message);
       return e.code === "generic" ? errors.generic(e.message) : errors[e.code];
     },
   );
@@ -194,11 +197,15 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
               onChange={(e) => setModelId(e.target.value)}
               className="max-w-36 cursor-pointer rounded-full border border-white/10 bg-transparent px-3 py-1.5 font-mono text-[11px] text-white/70 outline-none transition hover:border-white/30 focus:border-acid/60"
             >
-              {MODELS.map((m) => (
-                <option key={m.id} value={m.id} className="bg-ink">
-                  {m.label} · ${m.price.cacheMiss}/M
-                </option>
-              ))}
+              {MODELS.map((m) => {
+                // V4 Pro es de Business: se ve, pero con candado.
+                const locked = m.model !== findModel(undefined).model && !can(me, "proModel");
+                return (
+                  <option key={m.id} value={m.id} disabled={locked} className="bg-ink">
+                    {m.label} · ${m.price.cacheMiss}/M{locked ? ` · ${dict.account.gate.locked}` : ""}
+                  </option>
+                );
+              })}
             </select>
             <ShareButton id={nh.id} />
             {turns.length > 0 && (

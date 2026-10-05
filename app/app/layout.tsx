@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Backdrop } from "@/components/backdrop";
 import { AppHeader } from "@/components/app-header";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, googleEnabled } from "@/lib/auth";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
@@ -10,7 +10,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <>
       <Backdrop />
-      <AppHeader user={user} />
+      <AppHeader
+        user={{
+          name: user.name,
+          plan: user.planId,
+          avatarUrl: user.avatarUrl,
+          admin: user.admin,
+          canLinkGoogle: googleEnabled() && !user.hasGoogle,
+        }}
+      />
       {children}
     </>
   );

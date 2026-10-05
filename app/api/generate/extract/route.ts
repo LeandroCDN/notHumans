@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { metered } from "@/lib/account";
 import { llmJson } from "@/lib/llm";
-import { BaseRequest, guarded } from "@/lib/nothuman/api";
+import { BaseRequest, RequestError, guarded } from "@/lib/nothuman/api";
 import { findLeak } from "@/lib/nothuman/pipeline";
 import { extractSystemPrompt } from "@/lib/nothuman/prompts";
+import { readTicket } from "@/lib/nothuman/ticket";
 import { type Example, ExampleSchema, ExtractResultSchema } from "@/lib/nothuman/schema";
 
 export const maxDuration = 120;
@@ -11,13 +13,21 @@ const Body = BaseRequest.extend({ block: z.string().min(1).max(12_000) });
 
 /** Un bloque de conversaciones → ejemplos con marcadores + notas de estilo. */
 export async function POST(req: Request) {
-  return guarded(req, Body, async ({ owner, business, uiLang, block }) => {
-    const { data, usage, model } = await llmJson({
-      task: "extract",
-      system: extractSystemPrompt(owner, business, uiLang),
-      user: block,
-      schema: ExtractResultSchema,
-    });
+  return guarded(req, Body, async ({ owner, business, uiLang, block, ticket }, user) => {
+    const gen = await readTicket(ticket, user.id);
+    if (gen === null) throw new RequestError("expired", 409);
+    const { data, usage, model } = await metered(
+      user,
+      "extract",
+      () =>
+        llmJson({
+          task: "extract",
+          system: extractSystemPrompt(owner, business, uiLang),
+          user: block,
+          schema: ExtractResultSchema,
+        }),
+      { ref: String(gen) },
+    );
 
     const examples: Example[] = [];
     const leaks: string[] = [];

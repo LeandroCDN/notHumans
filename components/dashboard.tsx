@@ -2,11 +2,12 @@
 
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "motion/react";
 import Link from "next/link";
+import { PlanPanel } from "./account/plan-panel";
 import { Curtain, useArrivedFromLogin } from "./curtain";
 import { useI18n } from "./i18n";
 import { ScrambleText } from "./scramble-text";
 
-export function Dashboard({ user }: { user: string }) {
+export function Dashboard({ name, linked }: { name: string; linked?: string }) {
   const arrived = useArrivedFromLogin();
   const { t } = useI18n();
   // Si venimos del login, esperamos a que el telón se abra antes de mostrar todo.
@@ -25,7 +26,7 @@ export function Dashboard({ user }: { user: string }) {
           {t.dashboard.verified}
         </motion.p>
         <h1 className="mt-4 font-serif text-[clamp(3rem,8vw,7rem)] leading-[0.9] tracking-tight">
-          <ScrambleText text={t.dashboard.hello(user)} delay={base * 1000 + 50} duration={900} />
+          <ScrambleText text={t.dashboard.hello(name.split(" ")[0])} delay={base * 1000 + 50} duration={900} />
         </h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -35,6 +36,8 @@ export function Dashboard({ user }: { user: string }) {
         >
           {t.dashboard.question}
         </motion.p>
+
+        <PlanPanel delay={base + 0.55} linked={linked} />
 
         <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <TiltCard

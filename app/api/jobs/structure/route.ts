@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { metered } from "@/lib/account";
 import { llmJson } from "@/lib/llm";
 import { JobContentSchema } from "@/lib/job/schema";
 import { guarded } from "@/lib/nothuman/api";
@@ -15,15 +16,17 @@ const Structured = JobContentSchema.omit({ lang: true, brief: true }).extend({
 
 /** "Contame el laburo" → el puesto ordenado en secciones (negocio, reglas, horario, pasar a una persona). */
 export async function POST(req: Request) {
-  return guarded(req, Body, async ({ brief, uiLang }) => {
-    const { data, usage, model } = await llmJson({
-      task: "job",
-      system: jobStructurePrompt(uiLang),
-      user: brief,
-      schema: Structured,
-      maxTokens: 3000,
-      temperature: 0.2,
-    });
+  return guarded(req, Body, async ({ brief, uiLang }, user) => {
+    const { data, usage, model } = await metered(user, "structure", () =>
+      llmJson({
+        task: "job",
+        system: jobStructurePrompt(uiLang),
+        user: brief,
+        schema: Structured,
+        maxTokens: 3000,
+        temperature: 0.2,
+      }),
+    );
     const { name, ...rest } = data;
     return { name, content: JobContentSchema.parse({ ...rest, lang: uiLang, brief }), usage, model };
   });

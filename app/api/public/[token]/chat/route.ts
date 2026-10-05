@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { LimitError, metered } from "@/lib/account";
+import { sessionFrom } from "@/lib/auth";
 import { MissingKeyError } from "@/lib/llm";
 import { findModel } from "@/lib/llm/models";
 import { jobs } from "@/lib/db/jobs";
 import { notHumans } from "@/lib/db/nothumans";
+import { profiles } from "@/lib/db/profiles";
 import { shares } from "@/lib/db/shares";
 import { chatPersona } from "@/lib/nothuman/persona";
 import { replyAs } from "@/lib/nothuman/reply";
@@ -51,15 +54,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
 
   try {
     const share = await shares().find(token);
-    const nh = share && (await notHumans().get(share.nothumanId));
-    if (!nh) return error("not_found", 404);
+    const found = share && (await notHumans().getAny(share.nothumanId));
+    const owner = found?.userId ? await profiles().get(found.userId) : null;
+    if (!found || !owner) return error("not_found", 404);
+    const { nh } = found;
+    // El link lo paga el dueño: cuenta para sus respuestas del mes (si se quedó sin plan, el link se frena).
+    const account = sessionFrom(owner);
+    if (!account.limits.shareLinks) return error("limit", 429);
     if (!(await shares().use(token))) return error("limit", 429);
     // El puesto también sale de la base: el visitante no puede cambiar ni las reglas ni los datos.
-    const job = nh.jobId ? await jobs().get(nh.jobId) : null;
-    const reply = await replyAs(chatPersona(nh), parsed.data.turns, findModel(undefined), job);
+    const job = nh.jobId ? await jobs().getAny(nh.jobId) : null;
+    const reply = await metered(account, "reply", () => replyAs(chatPersona(nh), parsed.data.turns, findModel(undefined), job), {
+      nothumanId: nh.id,
+    });
     // Al público solo le llegan los mensajes: nada de costos, modelo ni razonamiento.
     return NextResponse.json({ messages: reply.messages });
   } catch (err) {
+    if (err instanceof LimitError) return error("limit", 429);
     if (err instanceof MissingKeyError) return error("unavailable", 503);
     console.error(err);
     return error("unavailable", 502);

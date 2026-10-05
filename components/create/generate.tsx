@@ -56,7 +56,15 @@ export function GenerateSection(props: { conversations: Conversation[]; owner: s
       }
     } catch (err) {
       const e = err instanceof GenerationError ? err : new GenerationError("generic", String(err));
-      setState({ kind: "error", message: e.code === "generic" ? t.errors.generic(e.message) : t.errors[e.code] });
+      setState({
+        kind: "error",
+        message:
+          e.code === "generic"
+            ? t.errors.generic(e.message)
+            : e.code === "limit"
+              ? dict.store.errors.limit(e.message)
+              : t.errors[e.code],
+      });
     }
   }
 

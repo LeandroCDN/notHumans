@@ -1,7 +1,10 @@
 import { Dashboard } from "@/components/dashboard";
 import { getSessionUser } from "@/lib/auth";
 
-export default async function AppHome() {
+type Props = { searchParams: Promise<{ linked?: string }> };
+
+export default async function AppHome({ searchParams }: Props) {
   const user = (await getSessionUser())!;
-  return <Dashboard user={user} />;
+  const { linked } = await searchParams;
+  return <Dashboard name={user.name} linked={linked} />;
 }

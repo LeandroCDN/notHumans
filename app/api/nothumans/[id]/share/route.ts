@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireFeature } from "@/lib/account";
 import { notHumans } from "@/lib/db/nothumans";
 import { withUser } from "@/lib/db/route";
 import { shares } from "@/lib/db/shares";
@@ -11,8 +12,8 @@ const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 }
 /** El link público activo del notHuman (o null). */
 export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
-  return withUser(async () => {
-    if (!z.uuid().safeParse(id).success) return notFound();
+  return withUser(async (user) => {
+    if (!z.uuid().safeParse(id).success || !(await notHumans().get(id, user.id))) return notFound();
     return NextResponse.json({ share: await shares().active(id) });
   });
 }
@@ -21,16 +22,17 @@ export async function GET(_req: Request, { params }: Ctx) {
 export async function POST(_req: Request, { params }: Ctx) {
   const { id } = await params;
   return withUser(async (user) => {
-    if (!z.uuid().safeParse(id).success || !(await notHumans().get(id))) return notFound();
-    return NextResponse.json({ share: await shares().create(id, user) });
+    if (!z.uuid().safeParse(id).success || !(await notHumans().get(id, user.id))) return notFound();
+    requireFeature(user, "shareLinks");
+    return NextResponse.json({ share: await shares().create(id, user.name) });
   });
 }
 
 /** Desactiva el link: deja de funcionar para todos los que lo tengan. */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { id } = await params;
-  return withUser(async () => {
-    if (!z.uuid().safeParse(id).success) return notFound();
+  return withUser(async (user) => {
+    if (!z.uuid().safeParse(id).success || !(await notHumans().get(id, user.id))) return notFound();
     await shares().revoke(id);
     return NextResponse.json({ share: null });
   });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { metered, requireFeature } from "@/lib/account";
 import { findModel } from "@/lib/llm/models";
 import { BusinessSchema, guarded } from "@/lib/nothuman/api";
 import { TurnsSchema, replyAs } from "@/lib/nothuman/reply";
@@ -24,5 +25,10 @@ const Body = z.object({
 
 /** Un turno del chat de prueba: el historial entero → los mensajes que mandaría el notHuman. */
 export async function POST(req: Request) {
-  return guarded(req, Body, ({ persona, turns, modelId, job }) => replyAs(persona, turns, findModel(modelId), job));
+  return guarded(req, Body, ({ persona, turns, modelId, job }, user) => {
+    const option = findModel(modelId);
+    if (option.model !== findModel(undefined).model) requireFeature(user, "proModel");
+    // Cada respuesta descuenta una del plan del dueño de la cuenta.
+    return metered(user, "reply", () => replyAs(persona, turns, option, job));
+  });
 }

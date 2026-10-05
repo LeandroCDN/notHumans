@@ -1,5 +1,6 @@
 "use client";
 
+import { limitFrom, refreshMe } from "@/lib/me";
 import { type VoiceNote, uploadName } from "./voice";
 
 // Transcribe las notas de voz desde el navegador: una por request, 3 en paralelo.
@@ -7,7 +8,8 @@ import { type VoiceNote, uploadName } from "./voice";
 
 export class TranscribeError extends Error {
   constructor(
-    public code: "missing_stt_key" | "unauthorized" | "generic",
+    /** "limit": se terminaron los minutos de audio del plan. */
+    public code: "missing_stt_key" | "unauthorized" | "limit" | "generic",
     detail = "",
   ) {
     super(detail || code);
@@ -32,6 +34,8 @@ async function one(note: VoiceNote, language: "es" | "en" | undefined, onWaiting
     const data = res ? await res.json().catch(() => ({})) : {};
     if (res?.ok) return data as { text: string; seconds: number };
     if (data.error === "missing_stt_key" || data.error === "unauthorized") throw new TranscribeError(data.error);
+    const limit = limitFrom(data);
+    if (limit) throw new TranscribeError("limit", limit.kind);
     // Límite de Groq: esperar un rato y reintentar, varias veces.
     if (data.error === "rate_limited" && attempt < 6) {
       onWaiting(true);
@@ -60,5 +64,6 @@ export async function transcribeAll(notes: VoiceNote[], language: "es" | "en" | 
     }
   };
   await Promise.all(Array.from({ length: Math.min(3, notes.length) }, worker));
+  refreshMe();
   if (fatal) throw fatal;
 }

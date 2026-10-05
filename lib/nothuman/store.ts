@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { limitFrom } from "@/lib/me";
 import { type Example, type NotHuman, NotHumanSchema } from "./schema";
 import type { VersionInfo } from "./versions";
 
@@ -13,7 +14,8 @@ const EVENT = "nh-store-change";
 
 export class StoreError extends Error {
   constructor(
-    public code: "storage_not_configured" | "unauthorized" | "conflict" | "leak" | "generic",
+    /** "limit": el plan no alcanza (el detalle dice qué tope). */
+    public code: "storage_not_configured" | "unauthorized" | "conflict" | "leak" | "limit" | "generic",
     detail = "",
   ) {
     super(detail || code);
@@ -38,6 +40,8 @@ export async function call<T>(url: string, init?: RequestInit): Promise<T> {
     throw new StoreError(data.error);
   }
   if (data.error === "leak") throw new StoreError("leak", data.leak);
+  const limit = limitFrom(data);
+  if (limit) throw new StoreError("limit", limit.kind);
   throw new StoreError("generic", data.detail ?? `HTTP ${res.status}`);
 }
 

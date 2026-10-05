@@ -13,6 +13,7 @@ export function storeErrorMessage(t: Dict["store"], error: unknown): string {
   const e = error instanceof StoreError ? error : new StoreError("generic", String(error));
   if (e.code === "generic") return e.message === "invalid_json" ? t.invalidJson : t.errors.generic(e.message);
   if (e.code === "leak") return t.errors.leak(e.message);
+  if (e.code === "limit") return t.errors.limit(e.message);
   return t.errors[e.code];
 }
 

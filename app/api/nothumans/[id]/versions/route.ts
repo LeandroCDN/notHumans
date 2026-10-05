@@ -19,9 +19,9 @@ const conflict = () => NextResponse.json({ error: "conflict" }, { status: 409 })
 
 export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
-  return withUser(async () => {
+  return withUser(async (user) => {
     if (!z.uuid().safeParse(id).success) return notFound();
-    return NextResponse.json({ items: await notHumans().versions(id) });
+    return NextResponse.json({ items: await notHumans().versions(id, user.id) });
   });
 }
 
@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const body = parsed.data;
 
     const repo = notHumans();
-    const current = await repo.get(id);
+    const current = await repo.get(id, user.id);
     if (!current) return notFound();
     // Alguien guardó otra versión mientras tanto: que el navegador recargue en vez de pisarla.
     if (current.version !== body.base) return conflict();
@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: Ctx) {
       next = { ...current, version: body.base + 1, examples: withCorrections(current, body.corrections) };
       note = encodeNote({ kind: "corrections", count: body.corrections.length });
     } else {
-      const old = await repo.getVersion(id, body.version);
+      const old = await repo.getVersion(id, user.id, body.version);
       if (!old) return notFound();
       next = { ...old, name: current.name, version: body.base + 1 };
       note = encodeNote({ kind: "restored", from: body.version });
