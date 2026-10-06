@@ -35,6 +35,7 @@ export class WaActionError extends Error {
 /** Procesa un aviso de Meta: guarda los mensajes y, después de la espera, responde una vez por charla. */
 export async function processWebhook(body: unknown): Promise<void> {
   const { messages, statuses } = parseWebhook(body);
+  console.info(`WhatsApp webhook: ${messages.length} mensaje(s), ${statuses.length} estado(s)`);
   for (const s of statuses) {
     if (s.status === "failed") await wa().failOutbound(s.waMessageId, s.error ?? "failed");
   }
@@ -42,7 +43,11 @@ export async function processWebhook(body: unknown): Promise<void> {
   const toAnswer = new Map<string, string>(); // charla → último mensaje guardado
   for (const m of messages) {
     const channel = await wa().channelByPhone(m.phoneNumberId);
-    if (!channel) continue; // un número que nadie conectó
+    if (!channel) {
+      // Un número que nadie conectó (o se cargó otro Phone Number ID en la sección WhatsApp).
+      console.warn(`WhatsApp webhook: llegó un mensaje para ${m.phoneNumberId}, pero ese número no está conectado`);
+      continue;
+    }
     const conv = await wa().upsertConversation(channel.id, m.from, m.name);
     let texts = [m.text];
     let transcribed = false;
@@ -197,7 +202,7 @@ async function bubbles(channel: Channel, conv: Conversation, texts: string[], ty
     try {
       ids.push(await sendText(channel.phoneNumberId, conv.customerWaId, text));
     } catch (err) {
-      console.error("WhatsApp: no se pudo mandar", err);
+      console.error(`WhatsApp: no se pudo mandar a ${conv.customerWaId}`, err);
       return { ids, error: String((err as Error).message).slice(0, 300) };
     }
   }

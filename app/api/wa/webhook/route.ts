@@ -20,6 +20,10 @@ export async function POST(req: Request) {
   const secret = process.env.WHATSAPP_APP_SECRET;
   // Sin el secreto no hay forma de saber que el aviso es de Meta: en producción se rechaza.
   if (secret ? !validSignature(raw, req.headers.get("x-hub-signature-256"), secret) : !mockWhatsApp()) {
+    // Lo más común: WHATSAPP_APP_SECRET no es la "Clave secreta" de la app de Meta (o falta el redeploy).
+    console.warn(
+      `WhatsApp webhook: firma rechazada (${secret ? "no coincide con WHATSAPP_APP_SECRET" : "falta WHATSAPP_APP_SECRET"})`,
+    );
     return new Response("bad signature", { status: 401 });
   }
   let body: unknown;
