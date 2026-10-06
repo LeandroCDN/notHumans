@@ -47,6 +47,52 @@ describe("avisos de Meta", () => {
     expect(messages[1].mediaId).toBe("media1");
   });
 
+  it("lee un aviso real de Meta (con campos de más)", () => {
+    const real = {
+      object: "whatsapp_business_account",
+      entry: [
+        {
+          id: "1148961187460562",
+          changes: [
+            {
+              value: {
+                messaging_product: "whatsapp",
+                metadata: { display_phone_number: "15556322698", phone_number_id: "1394755483713378" },
+                contacts: [
+                  { profile: { name: "leanlabiano" }, wa_id: "5492236697942", user_id: "AR.1", country_code: "AR" },
+                ],
+                messages: [
+                  {
+                    from: "5492236697942",
+                    from_user_id: "AR.1",
+                    id: "wamid.HBgNNTQ5MjIzNjY5Nzk0MhUCABIYFDNBNjcyNkEyRTZDMDAwMTIzOTY4AA==",
+                    timestamp: "1791329468",
+                    text: { body: "Hola buenas, me pasaron este contacto, estoy buscando una moto" },
+                    from_logical_id: "225524605526087",
+                    type: "text",
+                    internal_1p_only_data: { account_context: { cs_id: "1394755483713378" } },
+                  },
+                ],
+              },
+              field: "messages",
+            },
+          ],
+        },
+      ],
+    };
+    expect(parseWebhook(real).messages).toEqual([
+      {
+        phoneNumberId: "1394755483713378",
+        from: "5492236697942",
+        name: "leanlabiano",
+        waMessageId: "wamid.HBgNNTQ5MjIzNjY5Nzk0MhUCABIYFDNBNjcyNkEyRTZDMDAwMTIzOTY4AA==",
+        at: 1791329468000,
+        kind: "text",
+        text: "Hola buenas, me pasaron este contacto, estoy buscando una moto",
+      },
+    ]);
+  });
+
   it("lee los estados con error y descarta lo que no es de WhatsApp", () => {
     const body = {
       object: "whatsapp_business_account",

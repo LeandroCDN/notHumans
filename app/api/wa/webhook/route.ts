@@ -8,7 +8,7 @@ export const maxDuration = 120;
 
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
-  const expected = process.env.WHATSAPP_VERIFY_TOKEN;
+  const expected = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
   if (q.get("hub.mode") === "subscribe" && expected && q.get("hub.verify_token") === expected) {
     return new Response(q.get("hub.challenge") ?? "", { headers: { "content-type": "text/plain" } });
   }
@@ -17,7 +17,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const raw = await req.text();
-  const secret = process.env.WHATSAPP_APP_SECRET;
+  // trim: un espacio o salto de línea al pegarlo en Vercel rompe la firma y no se nota.
+  const secret = process.env.WHATSAPP_APP_SECRET?.trim();
   // Sin el secreto no hay forma de saber que el aviso es de Meta: en producción se rechaza.
   if (secret ? !validSignature(raw, req.headers.get("x-hub-signature-256"), secret) : !mockWhatsApp()) {
     // Lo más común: WHATSAPP_APP_SECRET no es la "Clave secreta" de la app de Meta (o falta el redeploy).

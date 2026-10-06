@@ -59,7 +59,7 @@ export function mockOutbox(): MockSent[] {
 }
 
 async function graph(path: string, body: unknown): Promise<Record<string, unknown>> {
-  const token = process.env.WHATSAPP_TOKEN;
+  const token = process.env.WHATSAPP_TOKEN?.trim();
   if (!token) throw new WhatsAppError("Falta WHATSAPP_TOKEN");
   const res = await fetch(`${GRAPH}/${path}`, {
     method: "POST",
@@ -103,7 +103,7 @@ export async function markRead(phoneNumberId: string, messageId: string, typing 
 /** Baja un archivo que mandó el cliente (por ejemplo, una nota de voz). */
 export async function downloadMedia(mediaId: string): Promise<{ bytes: Blob; mime: string }> {
   if (mockWhatsApp()) throw new WhatsAppError("Sin archivos en modo simulado");
-  const token = process.env.WHATSAPP_TOKEN!;
+  const token = process.env.WHATSAPP_TOKEN!.trim();
   const meta = await fetch(`${GRAPH}/${mediaId}`, { headers: { authorization: `Bearer ${token}` } });
   const info = (await meta.json().catch(() => ({}))) as { url?: string; mime_type?: string };
   if (!meta.ok || !info.url) throw new WhatsAppError(`No se pudo pedir el archivo (${meta.status})`);
