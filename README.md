@@ -24,6 +24,7 @@ npm run dev
 | `SUPABASE_URL` | URL del proyecto de Supabase |
 | `SUPABASE_SECRET_KEY` | Secret key de Supabase (solo server). Sin Supabase, en desarrollo se guarda en memoria |
 | `GROQ_API_KEY` | Key de Groq para transcribir notas de voz (Whisper) |
+| `WHATSAPP_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | WhatsApp (Cloud API de Meta). Sin token, en desarrollo se simula |
 | `LLM_MOCK=1` | Opcional: respuestas simuladas para desarrollar sin key |
 
 ## Cómo funciona
@@ -44,6 +45,12 @@ npm run dev
    antes (`charge` en `lib/account.ts`, función `consume_usage` en la base) y anota lo que costó en `usage`; si
    falla, se devuelve. El admin asigna planes a mano en `/app/admin` (todavía no hay cobros). Cada cuenta ve solo
    lo suyo.
+
+9. **WhatsApp** (`/app/whatsapp`): conectás un número (Phone Number ID de Meta) y elegís qué notHuman atiende y en
+   qué modo: borrador (sugiere y aprobás), fuera de horario, automático o apagado. Meta avisa a `/api/wa/webhook`
+   (firma verificada); se espera unos segundos por si el cliente manda más y se responde con la misma persona +
+   puesto del test drive, de a una burbuja. Bandeja con las charlas: aprobar/corregir/descartar borradores, tomar
+   la charla y escribir vos, pedir una sugerencia. Las notas de voz se transcriben. Sin Meta hay un simulador.
 
 ## Tests
 

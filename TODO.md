@@ -40,6 +40,12 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    y el bot se calla. Etapas: A) número de prueba de Meta + modo borrador; B) automático + bandeja;
    C) "Conectar mi WhatsApp" (alta embebida, verificación del negocio). Verificar: coexistencia en Argentina,
    ventana de 24 h, política de Meta sobre bots de IA (cambió a principios de 2026)
+   - [x] Etapa A en código: webhook + canales + bandeja (borrador / fuera de horario / automático / apagado),
+     tomar la charla, sugerir, audios transcriptos, simulador sin Meta
+   - [ ] Probar con el número de prueba real (variables en Vercel + webhook en Meta)
+   - [ ] Pasar a una persona automático (el modelo marca `handoff` y la charla queda en modo humano) + aviso al dueño
+   - [ ] Guardar las correcciones de la bandeja como ejemplos del notHuman (como "✎ corregir" del test drive)
+   - [ ] Token por canal (cifrado) para la etapa C; hoy hay uno solo en `WHATSAPP_TOKEN`
    - [ ] (opcional, más adelante) API pública `/api/v1/reply` con API keys, para quien quiera usar n8n/Make/Zapier
 
 ## Después: el puesto de trabajo

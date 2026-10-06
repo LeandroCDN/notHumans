@@ -13,7 +13,7 @@ import type { Usage } from "@/lib/nothuman/schema";
 // en el plan, no se llama. Después se cierra con lo que costó (`done`) o se devuelve (`refund`) si falló.
 
 /** Qué tope se alcanzó: un tipo de consumo mensual, una cantidad (notHumans, puestos) o una función del plan. */
-export type LimitKind = Kind | "nothumans" | "jobs" | "cost" | "shareLinks" | "proModel";
+export type LimitKind = Kind | "nothumans" | "jobs" | "cost" | "shareLinks" | "proModel" | "connections";
 
 export class LimitError extends Error {
   constructor(
@@ -98,7 +98,7 @@ export async function metered<T extends { usage?: Usage | null; model?: string }
 }
 
 /** Funciones del plan que son sí/no. */
-export function requireFeature(user: SessionUser, feature: "shareLinks" | "proModel") {
+export function requireFeature(user: SessionUser, feature: "shareLinks" | "proModel" | "connections") {
   if (!user.limits[feature]) throw new LimitError(feature, null);
 }
 

@@ -21,15 +21,17 @@ export function AppHeader({ user }: { user: HeaderUser }) {
     { href: "/app/new", label: t.header.nav.create },
     { href: "/app/explore", label: t.header.nav.nothumans },
     { href: "/app/jobs", label: t.header.nav.jobs },
+    { href: "/app/whatsapp", label: t.header.nav.whatsapp },
   ];
 
   return (
     <header className="relative z-40 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-5 sm:px-10">
-      <div className="flex items-center gap-6">
-        <Link href="/app">
+      <div className="flex min-w-0 max-w-full items-center gap-3 sm:gap-6">
+        <Link href="/app" className="shrink-0">
           <Logo className="text-2xl" />
         </Link>
-        <nav className="flex gap-1 text-sm">
+        {/* En el celu no entran las cuatro secciones: el menú se desliza. */}
+        <nav className="-mr-4 flex min-w-0 gap-1 overflow-x-auto pr-4 text-sm [scrollbar-width:none] sm:mr-0 sm:pr-0">
           {nav.map((n) => {
             const active = path.startsWith(n.href);
             return (
@@ -37,7 +39,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
                 key={n.href}
                 href={n.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-full px-3 py-1.5 transition ${
+                className={`shrink-0 rounded-full px-2.5 py-1.5 transition sm:px-3 ${
                   active ? "bg-acid/15 text-acid" : "text-white/55 hover:text-white"
                 }`}
               >

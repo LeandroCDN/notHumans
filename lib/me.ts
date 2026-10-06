@@ -48,7 +48,10 @@ export async function requestAccess(): Promise<void> {
 }
 
 /** Lo que se puede hacer con el plan, para mostrar candados antes de que el server diga que no. */
-export function can(me: Me | null, what: "create" | "jobs" | "chat" | "share" | "proModel" | "audio"): boolean {
+export function can(
+  me: Me | null,
+  what: "create" | "jobs" | "chat" | "share" | "proModel" | "audio" | "whatsapp",
+): boolean {
   if (!me) return true; // mientras carga, no bloqueamos nada (el server igual controla)
   const l: WireLimits = me.limits;
   const room = (max: number | null, used: number) => max === null || used < max;
@@ -63,6 +66,8 @@ export function can(me: Me | null, what: "create" | "jobs" | "chat" | "share" | 
       return l.shareLinks;
     case "proModel":
       return l.proModel;
+    case "whatsapp":
+      return l.connections;
     case "audio":
       return room(l.audioMinutes, me.used.audioMinutes);
   }

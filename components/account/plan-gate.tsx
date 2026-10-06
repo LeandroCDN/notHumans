@@ -10,7 +10,7 @@ import { RequestAccess } from "./plan-panel";
  * Candado de sección: si el plan no alcanza para crear notHumans (o puestos), en vez de la sección se ve
  * por qué y el botón para pedir acceso. El server controla igual: esto es para no hacer perder el tiempo.
  */
-export function PlanGate({ need, children }: { need: "create" | "jobs"; children: React.ReactNode }) {
+export function PlanGate({ need, children }: { need: "create" | "jobs" | "whatsapp"; children: React.ReactNode }) {
   const me = useMe();
   const { t } = useI18n();
   const g = t.account.gate;
@@ -20,7 +20,7 @@ export function PlanGate({ need, children }: { need: "create" | "jobs"; children
   if (me && allowed === null) setAllowed(can(me, need));
   if (!me || allowed !== false) return <>{children}</>;
   const free = me.plan === "free";
-  const title = need === "jobs" ? g.jobs : free ? g.create : g.createFull;
+  const title = need === "jobs" ? g.jobs : need === "whatsapp" ? g.whatsapp : free ? g.create : g.createFull;
   return (
     <main className="mx-auto max-w-3xl px-4 pb-24 pt-16 sm:px-10">
       <motion.div

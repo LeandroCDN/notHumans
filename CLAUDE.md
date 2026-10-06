@@ -63,6 +63,16 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   con puesto reemplaza al negocio de los chats en el prompt, sus reglas mandan sobre el estilo, y la hora del
   negocio va pegada al último mensaje (`nowNote`, para no romper la caché). La respuesta trae `used` ("usó: …").
   El link público arma el puesto desde la base. Mockup: https://claude.ai/artifact/V7fHFE24RBU8c8mmFAPWw2
+- WhatsApp (`/app/whatsapp`, `lib/wa/`, `components/wa/`, tablas `wa_channels` / `wa_conversations` /
+  `wa_messages`): un canal = un número (Phone Number ID de Meta) que atiende un notHuman (con su puesto) en un modo
+  (`draft` | `offhours` | `auto` | `off`). Meta → `/api/wa/webhook` (firma con `WHATSAPP_APP_SECRET`; el GET es el
+  saludo con `WHATSAPP_VERIFY_TOKEN`) → se guarda el mensaje (idempotente por `wa_id`) y con `after()` se espera
+  `WA_DEBOUNCE_MS` (4 s): si llegó otro mensaje responde ese; candado por charla (`generating_until`). La respuesta es
+  `replyAs` como el test drive, descuenta del plan del dueño; en borrador queda para aprobar, si no sale de a una
+  burbuja con "escribiendo…" (`lib/wa/cloud.ts`). El dueño puede tomar la charla (el bot se calla), escribir,
+  aprobar/corregir/descartar borradores o pedir una sugerencia. Ventana de 24 h. Números AR/MX: se manda sin el 9/1.
+  Plan: requiere `connections` (Business/Admin). Sin `WHATSAPP_TOKEN` en desarrollo o `LLM_MOCK=1` se simula
+  (`/api/wa/simulate`, bandeja de salida en memoria). La bandeja pregunta cada ~3 s (no hay tiempo real).
 - Lista de espera de la home: tabla `waitlist` (`/api/waitlist`, público, con trampa para bots y límite por IP).
 - localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 
@@ -82,5 +92,6 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 9. ✅ Sección notHumans: Explorar + test drive + perfil en una sola vista
 10. ✅ Puestos, entrega 1: crear/editar (contame el laburo + audio, IA que ordena), asignar, chat y link con puesto
 11. ✅ Cuentas con Google + planes (Free/Pro/Business/Admin) + consumo por mes + panel de admin
-12. ⏭️ Privacidad (privado/público) y Comunidad (Míos · Comunidad, 3 respuestas para probar); después
-    Puestos entrega 2 (catálogo Excel/CSV). Ver `TODO.md`
+12. ✅ WhatsApp etapa A: webhook + canales + bandeja con borradores (falta probarlo con Meta de verdad)
+13. ⏭️ Stock desde Google Sheets; WhatsApp etapa B (pasar a una persona automático); privacidad y Comunidad.
+    Ver `TODO.md`
