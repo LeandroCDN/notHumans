@@ -14,8 +14,9 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   (guarda en memoria). La base se maneja con el conector de Supabase.
 
 ## Decisiones tomadas
-- notHumans es solo la capa de personalidad: no hay integración con WhatsApp ni base de conocimiento
-  (los datos del negocio vienen de una fuente externa del cliente).
+- notHumans empezó como capa de personalidad pura; ahora suma el puesto (reglas) y va a sumar el stock
+  (Google Sheets compartido con un robot, solo lectura) y WhatsApp con **flujo propio** (Cloud API oficial, sin
+  n8n ni plataformas de terceros en el medio). Plan en `TODO.md`.
 - Personalidad separada de los datos: los ejemplos guardan marcadores (`{price}`, `{product}`…) en vez de
   datos concretos, para que la persona sea reutilizable. `findLeak` descarta ejemplos con datos sueltos.
 - Cuentas (`lib/auth.ts`, `lib/db/profiles.ts`): se entra con Google vía Supabase Auth (PKCE a mano en

@@ -28,9 +28,19 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
 2. [x] Puestos, entrega 1: crear (contame el laburo + audio → la IA ordena; reglas, horario, pasar a una persona),
    asignar desde notHumans, chat y link público con el puesto ("usó: …")
-   [ ] Puestos, entrega 2: catálogo desde Excel/CSV con columnas visibles/privadas, el notHuman busca en vez de leer todo
-3. [ ] Conexiones: Google Sheets y Calendar con cuenta de servicio (solo lectura) + mail propio del puesto
-4. [ ] WhatsApp: API oficial (Cloud API), conversaciones guardadas por número de cliente, pasar a una persona
+   [ ] Puestos, entrega 2: stock/catálogo. Camino principal: el dueño comparte su Google Sheet con el robot
+   (cuenta de servicio, solo lectura), elige columnas visibles/privadas, sincronizamos cada pocos minutos a una
+   copia y el notHuman busca ahí (solo las filas que importan, pegadas al último mensaje). CSV como respaldo
+3. [ ] Conexiones: Google Calendar con cuenta de servicio (solo lectura) + mail propio del puesto
+4. [ ] WhatsApp con **flujo propio** (decidido: nada de n8n ni bandejas de terceros en el medio). API oficial
+   (Cloud API): webhook firmado → guardar mensaje (idempotente por id) → esperar unos segundos por si manda más
+   (cola) → responder con personalidad + puesto + catálogo → burbujas de a una. Tablas `channels`,
+   `wa_conversations`, `wa_messages`. Modos por número: borrador (sugiere, el dueño aprueba) / fuera de horario /
+   siempre. Pasar a una persona: la charla queda en modo humano; con coexistencia el dueño responde desde su app
+   y el bot se calla. Etapas: A) número de prueba de Meta + modo borrador; B) automático + bandeja;
+   C) "Conectar mi WhatsApp" (alta embebida, verificación del negocio). Verificar: coexistencia en Argentina,
+   ventana de 24 h, política de Meta sobre bots de IA (cambió a principios de 2026)
+   - [ ] (opcional, más adelante) API pública `/api/v1/reply` con API keys, para quien quiera usar n8n/Make/Zapier
 
 ## Después: el puesto de trabajo
 La idea: el notHuman es **cómo habla**; el puesto es **dónde trabaja y con qué reglas**. Separados, la misma
