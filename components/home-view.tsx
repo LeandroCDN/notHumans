@@ -42,6 +42,9 @@ export function HomeView({
       </main>
       <footer className="flex flex-col items-center justify-between gap-2 px-6 py-10 font-mono text-[11px] text-white/30 sm:flex-row sm:px-10">
         <span>notHumans © 2026</span>
+        <a href="/privacy" className="transition hover:text-acid">
+          {t.home.privacy}
+        </a>
         <span>{t.home.footer}</span>
       </footer>
     </LoginProvider>

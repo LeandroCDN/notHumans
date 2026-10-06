@@ -96,6 +96,7 @@ const en = {
       doneBody: "We'll write to you when it's your turn. For now, a human will.",
     },
     footer: "made by humans (for now)",
+    privacy: "Privacy",
   },
   heroChat: {
     typing: "typing…",
@@ -321,6 +322,57 @@ const en = {
       send: "Send as customer",
       sent: "Sent ✓ The notHuman waits a few seconds in case you send more.",
     },
+  },
+  legal: {
+    title: "Privacy",
+    accent: "policy.",
+    updated: "Last updated: October 2026",
+    intro:
+      "notHumans is a platform in beta to create AI personas (notHumans) that write like a real person and can answer a business's customers, for example on WhatsApp. This page explains what data we handle and what you can do about it.",
+    sections: [
+      {
+        title: "What we collect",
+        items: [
+          "Your account: name, email and photo from Google when you sign in.",
+          "What you upload to create a notHuman: WhatsApp chat exports and voice notes. They are processed to learn the writing style; we keep the resulting personality and examples (with placeholders instead of real data such as prices or addresses), not the original chats.",
+          "Your jobs: business information, rules and hours you write.",
+          "WhatsApp: if you connect a number, the messages exchanged with your customers on that number (their WhatsApp number, profile name and message text), so the notHuman can answer and you can see them in the inbox. Customer voice notes are transcribed to text.",
+          "Usage: how much AI each account uses (tokens and cost), to apply plan limits.",
+        ],
+      },
+      {
+        title: "Who processes it",
+        items: [
+          "Supabase (database) and Vercel (hosting).",
+          "DeepSeek, the AI that writes the replies. It may process data outside your country, including in China.",
+          "Groq, to transcribe voice notes.",
+          "Google, only to sign you in. Meta, to send and receive WhatsApp messages.",
+        ],
+      },
+      {
+        title: "What we don't do",
+        items: [
+          "We don't sell your data or your customers' data, and we don't use it for advertising.",
+          "We don't use one account's data to answer for another account.",
+        ],
+      },
+      {
+        title: "Customers who write on WhatsApp",
+        items: [
+          "If you write to a business that uses notHumans, an AI may answer on behalf of the business, and the business can read the conversation. The business is responsible for telling you so and for how it uses your data.",
+        ],
+      },
+    ],
+    deleteTitle: "Delete your data",
+    deleteItems: [
+      "From the app you can delete notHumans and jobs, and disconnecting a WhatsApp number deletes its conversations.",
+      "To delete your whole account and everything in it, write to us from your account's email. We delete it within 30 days.",
+      "If you wrote to a business on WhatsApp and want your messages deleted, ask that business, or write to us and we'll pass it on.",
+    ],
+    contactTitle: "Contact",
+    contact: (email: string) => `Write to ${email}.`,
+    contactFallback: "Use the contact email listed for the notHumans app in Meta for Developers.",
+    back: "← notHumans",
   },
   hub: {
     listTitle: "Your notHumans",
@@ -742,6 +794,7 @@ const es: Dict = {
       doneBody: "Te escribimos cuando te toque. Por ahora, te va a escribir un humano.",
     },
     footer: "hecho por humanos (por ahora)",
+    privacy: "Privacidad",
   },
   heroChat: {
     typing: "escribiendo…",
@@ -967,6 +1020,57 @@ const es: Dict = {
       send: "Mandar como cliente",
       sent: "Mandado ✓ El notHuman espera unos segundos por si mandás más.",
     },
+  },
+  legal: {
+    title: "Política de",
+    accent: "privacidad.",
+    updated: "Última actualización: octubre de 2026",
+    intro:
+      "notHumans es una plataforma en beta para crear personas de IA (notHumans) que escriben como una persona real y pueden atender a los clientes de un negocio, por ejemplo por WhatsApp. Acá contamos qué datos manejamos y qué podés hacer con ellos.",
+    sections: [
+      {
+        title: "Qué guardamos",
+        items: [
+          "Tu cuenta: nombre, mail y foto de Google cuando entrás.",
+          "Lo que subís para crear un notHuman: exports de chats de WhatsApp y notas de voz. Se procesan para aprender cómo escribís; guardamos la personalidad que sale y los ejemplos (con marcadores en vez de datos reales como precios o direcciones), no los chats originales.",
+          "Tus puestos: la información del negocio, las reglas y el horario que escribís.",
+          "WhatsApp: si conectás un número, los mensajes con tus clientes en ese número (su número de WhatsApp, su nombre de perfil y el texto), para que el notHuman responda y los veas en la bandeja. Las notas de voz de los clientes se pasan a texto.",
+          "Uso: cuánta IA usa cada cuenta (tokens y costo), para aplicar los topes del plan.",
+        ],
+      },
+      {
+        title: "Quién los procesa",
+        items: [
+          "Supabase (base de datos) y Vercel (hosting).",
+          "DeepSeek, la IA que escribe las respuestas. Puede procesar datos fuera de tu país, incluso en China.",
+          "Groq, para transcribir notas de voz.",
+          "Google, solo para que entres. Meta, para mandar y recibir mensajes de WhatsApp.",
+        ],
+      },
+      {
+        title: "Lo que no hacemos",
+        items: [
+          "No vendemos tus datos ni los de tus clientes, ni los usamos para publicidad.",
+          "No usamos los datos de una cuenta para responder por otra.",
+        ],
+      },
+      {
+        title: "Clientes que escriben por WhatsApp",
+        items: [
+          "Si le escribís a un negocio que usa notHumans, te puede responder una IA en nombre del negocio, y el negocio puede leer la charla. El negocio es responsable de avisarte y de cómo usa tus datos.",
+        ],
+      },
+    ],
+    deleteTitle: "Borrar tus datos",
+    deleteItems: [
+      "Desde la app podés borrar notHumans y puestos, y desconectar un número de WhatsApp borra sus charlas.",
+      "Para borrar tu cuenta entera y todo lo que tiene, escribinos desde el mail de tu cuenta. La borramos en 30 días como máximo.",
+      "Si le escribiste a un negocio por WhatsApp y querés que se borren tus mensajes, pedíselo a ese negocio, o escribinos y se lo hacemos llegar.",
+    ],
+    contactTitle: "Contacto",
+    contact: (email) => `Escribinos a ${email}.`,
+    contactFallback: "Usá el mail de contacto que figura para la app notHumans en Meta for Developers.",
+    back: "← notHumans",
   },
   hub: {
     listTitle: "Tus notHumans",
