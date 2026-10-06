@@ -544,3 +544,26 @@ export function wa(): WaRepo {
   repo = db ? supabaseWa(db) : memoryWa();
   return repo;
 }
+
+/** Anota un aviso del webhook (para diagnosticar). Nunca rompe el webhook: si falla, solo lo dice en el log. */
+export async function logWebhook(entry: {
+  outcome: "bad_signature" | "bad_json" | "ok" | "no_channel" | "error";
+  phoneNumberId?: string | null;
+  messages?: number;
+  statuses?: number;
+  detail?: string;
+}): Promise<void> {
+  try {
+    const db = supabase();
+    if (!db) return;
+    await db.from("wa_webhook_log").insert({
+      outcome: entry.outcome,
+      phone_number_id: entry.phoneNumberId ?? null,
+      messages: entry.messages ?? 0,
+      statuses: entry.statuses ?? 0,
+      detail: entry.detail?.slice(0, 500) ?? null,
+    });
+  } catch (err) {
+    console.warn("WhatsApp: no se pudo anotar el aviso", err);
+  }
+}

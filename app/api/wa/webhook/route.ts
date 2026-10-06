@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { logWebhook } from "@/lib/db/wa";
 import { processWebhook } from "@/lib/wa/bot";
 import { mockWhatsApp, validSignature } from "@/lib/wa/cloud";
 
@@ -25,14 +26,24 @@ export async function POST(req: Request) {
     console.warn(
       `WhatsApp webhook: firma rechazada (${secret ? "no coincide con WHATSAPP_APP_SECRET" : "falta WHATSAPP_APP_SECRET"})`,
     );
+    await logWebhook({
+      outcome: "bad_signature",
+      detail: secret ? `firma ${req.headers.get("x-hub-signature-256") ? "no coincide" : "ausente"}` : "falta WHATSAPP_APP_SECRET",
+    });
     return new Response("bad signature", { status: 401 });
   }
   let body: unknown;
   try {
     body = JSON.parse(raw);
   } catch {
+    await logWebhook({ outcome: "bad_json" });
     return new Response("bad json", { status: 400 });
   }
-  after(() => processWebhook(body).catch((err) => console.error("WhatsApp webhook", err)));
+  after(() =>
+    processWebhook(body).catch(async (err) => {
+      console.error("WhatsApp webhook", err);
+      await logWebhook({ outcome: "error", detail: String((err as Error)?.message ?? err) });
+    }),
+  );
   return new Response("ok");
 }

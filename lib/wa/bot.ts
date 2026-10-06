@@ -4,7 +4,7 @@ import { sessionFrom } from "@/lib/auth";
 import { jobs } from "@/lib/db/jobs";
 import { notHumans } from "@/lib/db/nothumans";
 import { profiles } from "@/lib/db/profiles";
-import { wa } from "@/lib/db/wa";
+import { logWebhook, wa } from "@/lib/db/wa";
 import { isOpen } from "@/lib/job/manual";
 import { findModel, sttCostUsd } from "@/lib/llm/models";
 import { chatPersona } from "@/lib/nothuman/persona";
@@ -36,6 +36,8 @@ export class WaActionError extends Error {
 export async function processWebhook(body: unknown): Promise<void> {
   const { messages, statuses } = parseWebhook(body);
   console.info(`WhatsApp webhook: ${messages.length} mensaje(s), ${statuses.length} estado(s)`);
+  const phones = [...new Set([...messages, ...statuses].map((m) => m.phoneNumberId))];
+  let unknown = 0;
   for (const s of statuses) {
     if (s.status === "failed") await wa().failOutbound(s.waMessageId, s.error ?? "failed");
   }
@@ -46,6 +48,7 @@ export async function processWebhook(body: unknown): Promise<void> {
     if (!channel) {
       // Un número que nadie conectó (o se cargó otro Phone Number ID en la sección WhatsApp).
       console.warn(`WhatsApp webhook: llegó un mensaje para ${m.phoneNumberId}, pero ese número no está conectado`);
+      unknown++;
       continue;
     }
     const conv = await wa().upsertConversation(channel.id, m.from, m.name);
@@ -63,6 +66,13 @@ export async function processWebhook(body: unknown): Promise<void> {
     if (transcribed) await wa().updateMessage(saved.id, { meta: { transcribed: true } });
     toAnswer.set(conv.id, saved.id);
   }
+
+  await logWebhook({
+    outcome: unknown ? "no_channel" : "ok",
+    phoneNumberId: phones.join(",") || null,
+    messages: messages.length,
+    statuses: statuses.length,
+  });
 
   await Promise.all(
     [...toAnswer].map(async ([conversationId, trigger]) => {
