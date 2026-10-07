@@ -19,7 +19,7 @@ export function JobsView({ selected }: { selected?: string }) {
   const { jobs } = useJobs();
   const { list } = useNotHumans();
   const dirty = useRef(false);
-  const [lastSaved, setLastSaved] = useState<{ id: string; version: number } | null>(null);
+  const [lastSaved, setLastSaved] = useState<{ id: string; version: number; warning?: string } | null>(null);
   const onDirty = useCallback((d: boolean) => {
     dirty.current = d;
   }, []);
@@ -84,7 +84,8 @@ export function JobsView({ selected }: { selected?: string }) {
           workers={workers}
           onDirty={onDirty}
           justSaved={lastSaved && lastSaved.id === job?.id ? lastSaved.version : null}
-          onSaved={(j) => setLastSaved({ id: j.id, version: j.version })}
+          saveWarning={lastSaved && lastSaved.id === job?.id ? lastSaved.warning : null}
+          onSaved={(j, warning) => setLastSaved({ id: j.id, version: j.version, warning })}
         />
       </div>
     </main>

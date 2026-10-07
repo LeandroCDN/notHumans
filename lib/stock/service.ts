@@ -56,7 +56,8 @@ async function checkOwner(user: SessionUser, id: string) {
 /** Lee la planilla y propone el mapa (con IA; si el modelo falla, por los títulos). Para revisar antes de guardar. */
 export async function inspect(
   user: SessionUser,
-  jobId: string,
+  /** null = un puesto nuevo que todavía no se guardó (se conecta al guardarlo). */
+  jobId: string | null,
   url: string,
   lang: "es" | "en",
 ): Promise<StockInspection> {
@@ -68,7 +69,7 @@ export async function inspect(
   if (!raw.tabs.some((t) => t.rows.length)) throw new RequestError("empty_sheet", 422);
 
   // Si ya estaba conectada esta misma planilla, "revisar" parte del mapa guardado (sin gastar IA).
-  const current = await stock().get(jobId);
+  const current = jobId ? await stock().get(jobId) : null;
   let proposal: StockMap;
   if (current?.spreadsheetId === id) {
     proposal = current.map;

@@ -8,6 +8,7 @@ import {
   StockError,
   connectStock,
   disconnectStock,
+  getRobot,
   getStock,
   inspectStock,
   sheetLink,
@@ -18,6 +19,7 @@ import {
   COLUMN_ROLES,
   type ColumnRole,
   type StockInspection,
+  type StockMap,
   type StockSource,
   TAB_USES,
   type TabUse,
@@ -26,25 +28,41 @@ import { useI18n } from "../i18n";
 
 // El stock del puesto: conectar la planilla (compartirla con el robot + pegar el link), revisar cómo la entendimos
 // (pestañas, fila de títulos y qué es cada columna; lo privado no sale nunca) y ver el estado de la conexión.
+// En un puesto nuevo se hace todo igual y la planilla queda "lista": se conecta cuando se guarda el puesto.
+
+/** Una planilla leída y revisada para un puesto que todavía no se guardó. */
+export type PendingStock = { inspection: StockInspection; map: StockMap };
 
 const card = "rounded-[28px] border border-white/10 bg-white/[0.03] p-5 sm:p-6";
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export function StockPanel({ jobId }: { jobId: string | null }) {
+export function StockPanel({
+  jobId,
+  pending = null,
+  onPending,
+}: {
+  /** null = puesto nuevo: la planilla queda en `pending` hasta que se guarde. */
+  jobId: string | null;
+  pending?: PendingStock | null;
+  onPending?: (p: PendingStock | null) => void;
+}) {
   const { t: dict } = useI18n();
   const t = dict.jobs.stock;
   const me = useMe();
   const allowed = can(me, "whatsapp");
   const [data, setData] = useState<{ robot: string | null; source: StockSource | null } | null>(null);
-  const [review, setReview] = useState<StockInspection | null>(null);
+  const [review, setReview] = useState<{ inspection: StockInspection; map: StockMap } | null>(null);
 
   useEffect(() => {
     setData(null);
     setReview(null);
-    if (!jobId || !allowed) return;
-    getStock(jobId)
-      .then(setData)
-      .catch(() => setData({ robot: null, source: null }));
+    if (!allowed) return;
+    const fallback = () => setData({ robot: null, source: null });
+    if (jobId) getStock(jobId).then(setData).catch(fallback);
+    else
+      getRobot()
+        .then(({ robot }) => setData({ robot, source: null }))
+        .catch(fallback);
   }, [jobId, allowed]);
 
   const header = (
@@ -56,22 +74,22 @@ export function StockPanel({ jobId }: { jobId: string | null }) {
     </div>
   );
 
-  if (!jobId || !allowed) {
+  if (!allowed) {
     return (
       <section className={card}>
         {header}
         <p className="mt-1 text-sm text-white/55">{t.sub}</p>
         <p className="mt-4 rounded-2xl bg-white/[0.04] px-4 py-3 text-sm text-white/60">
-          {!jobId ? t.saveFirst : t.locked}{" "}
-          {jobId && (
-            <Link href="/app/pricing" className="text-acid hover:underline">
-              {t.seePlans}
-            </Link>
-          )}
+          {t.locked}{" "}
+          <Link href="/app/pricing" className="text-acid hover:underline">
+            {t.seePlans}
+          </Link>
         </p>
       </section>
     );
   }
+
+  const inspected = (inspection: StockInspection) => setReview({ inspection, map: inspection.map });
 
   return (
     <motion.section layout className={`${card} overflow-hidden`}>
@@ -87,24 +105,36 @@ export function StockPanel({ jobId }: { jobId: string | null }) {
           <Review
             key="review"
             jobId={jobId}
-            inspection={review}
+            inspection={review.inspection}
+            initialMap={review.map}
             onCancel={() => setReview(null)}
+            onReady={(map) => {
+              onPending?.({ inspection: review.inspection, map });
+              setReview(null);
+            }}
             onSaved={(source) => {
               setData({ ...data, source });
               setReview(null);
             }}
           />
-        ) : data.source ? (
+        ) : data.source && jobId ? (
           <Connected
             key="connected"
             jobId={jobId}
             source={data.source}
             onChange={(source) => setData({ ...data, source })}
             onDisconnected={() => setData({ ...data, source: null })}
-            onReview={setReview}
+            onReview={inspected}
+          />
+        ) : pending ? (
+          <Pending
+            key="pending"
+            pending={pending}
+            onReview={() => setReview(pending)}
+            onRemove={() => onPending?.(null)}
           />
         ) : (
-          <Connect key="connect" jobId={jobId} robot={data.robot} onInspected={setReview} />
+          <Connect key="connect" jobId={jobId} robot={data.robot} onInspected={inspected} />
         )}
       </AnimatePresence>
     </motion.section>
@@ -129,7 +159,7 @@ function Connect({
   robot,
   onInspected,
 }: {
-  jobId: string;
+  jobId: string | null;
   robot: string | null;
   onInspected: (i: StockInspection) => void;
 }) {
@@ -282,17 +312,22 @@ function Reading({ label }: { label: string }) {
 function Review({
   jobId,
   inspection,
+  initialMap,
   onCancel,
+  onReady,
   onSaved,
 }: {
-  jobId: string;
+  /** null = puesto nuevo: "Listo" deja la planilla lista para conectar al guardar el puesto. */
+  jobId: string | null;
   inspection: StockInspection;
+  initialMap: StockMap;
   onCancel: () => void;
+  onReady: (map: StockMap) => void;
   onSaved: (s: StockSource) => void;
 }) {
   const t = useI18n().t.jobs.stock;
   const errorText = useErrorText();
-  const [map, setMap] = useState(inspection.map);
+  const [map, setMap] = useState(initialMap);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // La vista previa sale de lo mismo que se va a guardar: el mapa aplicado a la planilla (recortada).
@@ -310,6 +345,7 @@ function Review({
   }
 
   async function save() {
+    if (!jobId) return onReady(map);
     setSaving(true);
     setError(null);
     try {
@@ -462,10 +498,67 @@ function Review({
           onClick={save}
           className="rounded-full bg-acid px-6 py-2.5 text-sm font-medium text-ink shadow-[0_20px_60px_-20px_rgba(198,255,61,0.6)] disabled:opacity-40"
         >
-          {saving ? t.saving : t.save}
+          {saving ? t.saving : jobId ? t.save : t.ready}
         </motion.button>
         <button type="button" onClick={onCancel} className="text-sm text-white/50 transition hover:text-white">
           {t.cancel}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Puesto nuevo: la planilla ya está leída y revisada; se conecta cuando se guarde el puesto. */
+function Pending({
+  pending,
+  onReview,
+  onRemove,
+}: {
+  pending: PendingStock;
+  onReview: () => void;
+  onRemove: () => void;
+}) {
+  const t = useI18n().t.jobs.stock;
+  const preview = useMemo(() => applyMap(pending.inspection, pending.map).snapshot, [pending]);
+  const sample = preview.tabs.find((x) => x.use === "catalog") ?? preview.tabs[0];
+  return (
+    <motion.div {...enter} className="mt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-amber-200">
+          <span className="size-1.5 rounded-full bg-amber-200" />
+          {t.pendingTitle}
+        </span>
+        <span className="min-w-0 truncate font-medium">{pending.inspection.title}</span>
+      </div>
+      <p className="mt-1 text-sm text-white/55">{t.pendingSub}</p>
+      {sample?.rows.length ? (
+        <div className="mt-4 rounded-2xl bg-ink/60 p-3.5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/35">
+            {t.preview} · {sample.name}
+          </p>
+          <ul className="mt-1.5 grid gap-1 font-mono text-[11px] leading-relaxed text-white/70">
+            {sample.rows.slice(0, 3).map((row, k) => (
+              <li key={k} className="truncate">
+                – {rowLine(sample, row)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={onReview}
+          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm transition hover:border-acid hover:text-acid"
+        >
+          {t.review}
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="ml-auto px-2 py-2 text-sm text-white/35 transition hover:text-rose"
+        >
+          {t.remove}
         </button>
       </div>
     </motion.div>

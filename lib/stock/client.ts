@@ -27,8 +27,15 @@ const base = (jobId: string) => `/api/jobs/${jobId}/stock`;
 
 export const getStock = (jobId: string) => call<{ robot: string | null; source: StockSource | null }>(base(jobId));
 
-export const inspectStock = (jobId: string, url: string, uiLang: "en" | "es") =>
-  call<StockInspection>(`${base(jobId)}/inspect`, { method: "POST", body: JSON.stringify({ url, uiLang }) });
+/** El mail del robot, para un puesto que todavía no se guardó. */
+export const getRobot = () => call<{ robot: string | null }>("/api/stock");
+
+/** Lee la planilla y propone el mapa. Sin puesto (uno nuevo), se revisa igual y se conecta al guardarlo. */
+export const inspectStock = (jobId: string | null, url: string, uiLang: "en" | "es") =>
+  call<StockInspection>(jobId ? `${base(jobId)}/inspect` : "/api/stock/inspect", {
+    method: "POST",
+    body: JSON.stringify({ url, uiLang }),
+  });
 
 export const connectStock = (jobId: string, spreadsheetId: string, map: StockMap) =>
   call<StockSource>(base(jobId), { method: "PUT", body: JSON.stringify({ spreadsheetId, map }) });

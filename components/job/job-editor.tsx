@@ -9,10 +9,11 @@ import { type Job, type JobContent, RULE_KINDS, type RuleKind, emptyJobContent }
 import { createJob, deleteJob, saveJob, structureBrief } from "@/lib/job/store";
 import type { NotHuman } from "@/lib/nothuman/schema";
 import { StoreError } from "@/lib/nothuman/store";
+import { StockError, connectStock } from "@/lib/stock/client";
 import { useI18n } from "../i18n";
 import { storeErrorMessage } from "../nothuman/store-ui";
 import { RecordButton } from "./record-button";
-import { StockPanel } from "./stock-panel";
+import { type PendingStock, StockPanel } from "./stock-panel";
 
 // Editor de un puesto: "Contame el laburo" arriba, las secciones editables abajo y el manual del empleado al costado
 // (el texto exacto que va a leer el notHuman). Guardar crea una versión nueva.
@@ -24,14 +25,16 @@ type Props = {
   onDirty: (dirty: boolean) => void;
   /** Se acaba de guardar (al crear, el editor se vuelve a montar con el id nuevo: así no se pierde el aviso). */
   justSaved?: number | null;
-  onSaved: (job: Job) => void;
+  /** Si al crear el puesto no se pudo conectar la planilla, el aviso (sobrevive al remontar, como `justSaved`). */
+  saveWarning?: string | null;
+  onSaved: (job: Job, warning?: string) => void;
 };
 
 const field =
   "w-full rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[15px] outline-none transition placeholder:text-white/25 focus:border-acid/50";
 const card = "rounded-[28px] border border-white/10 bg-white/[0.03] p-5 sm:p-6";
 
-export function JobEditor({ job, workers, onDirty, justSaved, onSaved }: Props) {
+export function JobEditor({ job, workers, onDirty, justSaved, saveWarning, onSaved }: Props) {
   const { t: dict, locale } = useI18n();
   const t = dict.jobs;
   const router = useRouter();
@@ -40,12 +43,14 @@ export function JobEditor({ job, workers, onDirty, justSaved, onSaved }: Props) 
   const [saving, setSaving] = useState(false);
   const [sorting, setSorting] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string; conflict?: boolean } | null>(
-    justSaved ? { ok: true, text: dict.jobs.saved(justSaved) } : null,
+    saveWarning ? { ok: false, text: saveWarning } : justSaved ? { ok: true, text: dict.jobs.saved(justSaved) } : null,
   );
+  // Puesto nuevo con la planilla ya leída y revisada: se conecta al guardar.
+  const [pendingStock, setPendingStock] = useState<PendingStock | null>(null);
 
   // Hay cambios si difiere de lo guardado (o si es nuevo y ya se escribió algo).
   const saved = useMemo(() => JSON.stringify([job?.name ?? "", job?.content ?? emptyJobContent(locale)]), [job, locale]);
-  const dirty = JSON.stringify([name, content]) !== saved;
+  const dirty = JSON.stringify([name, content]) !== saved || !!pendingStock;
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
   useEffect(() => {
     if (!dirty) return;
@@ -88,11 +93,21 @@ export function JobEditor({ job, workers, onDirty, justSaved, onSaved }: Props) 
     const finalName = name.trim() || t.defaultName;
     try {
       const next = job ? await saveJob(job.id, job.version, finalName, content) : await createJob(finalName, content);
+      let warning: string | undefined;
+      if (!job && pendingStock) {
+        try {
+          await connectStock(next.id, pendingStock.inspection.spreadsheetId, pendingStock.map);
+        } catch (err) {
+          const code = err instanceof StockError ? err.code : "generic";
+          warning = t.stock.connectFailed(t.stock.errors[code] ?? t.stock.errors.generic);
+        }
+        setPendingStock(null);
+      }
       setName(next.name);
       setContent(next.content);
-      setMessage({ ok: true, text: t.saved(next.version) });
+      setMessage(warning ? { ok: false, text: warning } : { ok: true, text: t.saved(next.version) });
       onDirty(false);
-      onSaved(next);
+      onSaved(next, warning);
       if (!job) router.replace(`/app/jobs?job=${next.id}`, { scroll: false });
     } catch (err) {
       const conflict = err instanceof StoreError && err.code === "conflict";
@@ -312,7 +327,7 @@ export function JobEditor({ job, workers, onDirty, justSaved, onSaved }: Props) 
             )}
           </section>
 
-          <StockPanel jobId={job?.id ?? null} />
+          <StockPanel jobId={job?.id ?? null} pending={pendingStock} onPending={setPendingStock} />
 
           <div className="grid gap-4 lg:grid-cols-2">
             <HandoffCard content={content} set={set} />

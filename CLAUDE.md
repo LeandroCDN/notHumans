@@ -89,7 +89,7 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
   la que entra (Drive `owners`; los admins pueden cualquiera). **Sin plantilla**: `/inspect` lee la planilla y la IA
   (tarea `stock_map`, cuenta como `structure`; si falla, `heuristicMap` por los títulos) propone el mapa: pestañas
   catálogo/info/no usar, fila de títulos y rol de cada columna (producto, código, precio, stock, dato, privado; ante
-  la duda, privado). El dueño lo revisa y `PUT` guarda el mapa + la copia (`applyMap`: solo columnas visibles; lo
+  la duda, privado). El dueño lo revisa (en un puesto nuevo se lee y revisa igual con `/api/stock/inspect` y queda "lista"; se conecta al guardar el puesto) y `PUT` guarda el mapa + la copia (`applyMap`: solo columnas visibles; lo
   privado no se guarda). Si cambian las columnas → `needs_review` y las nuevas no se usan. `stockForReply` relee si
   pasaron 5 min (espera hasta 4 s). En el prompt: si entra (≤14k caracteres) va entero en la parte fija (caché); si
   no, la info fija y las filas que coinciden con los últimos mensajes del cliente pegadas al último. Requiere plan
