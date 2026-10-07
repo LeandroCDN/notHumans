@@ -63,7 +63,10 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    - [x] Etapa A en código: webhook + canales + bandeja (borrador / fuera de horario / automático / apagado),
      tomar la charla, sugerir, audios transcriptos, simulador sin Meta
    - [x] Probado con el número de prueba real: llega el mensaje, se arma el borrador y al aprobarlo llega al celu
-   - [ ] Token permanente (el temporal de "Pruébalo" vence en horas) y probar el modo automático
+   - [x] Token de usuario del sistema (portfolio NotHumans, "notHumans bot"): **vence a los 60 días, ~6/12/2026**.
+     Antes de esa fecha: generar otro (Configuración → Usuarios del sistema → Generar token), pegarlo en
+     `WHATSAPP_TOKEN` en Vercel y redeployar. Si se vence, los envíos fallan con "Authentication Error"
+   - [ ] Probar el modo automático con el stock conectado
    - [ ] Filtro de datos personales: que también cambie nombres propios por un marcador (`{owner_name}`)
    - [ ] Pasar a una persona automático (el modelo marca `handoff` y la charla queda en modo humano) + aviso al dueño
    - [ ] **Consultar al dueño** ("subir el nivel de atención"): cuando el notHuman no puede validar o hacer algo
