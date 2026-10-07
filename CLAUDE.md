@@ -73,6 +73,10 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   aprobar/corregir/descartar borradores o pedir una sugerencia. Ventana de 24 h. Números AR/MX: se manda sin el 9/1.
   Plan: requiere `connections` (Business/Admin). Sin `WHATSAPP_TOKEN` en desarrollo o `LLM_MOCK=1` se simula
   (`/api/wa/simulate`, bandeja de salida en memoria). La bandeja pregunta cada ~3 s (no hay tiempo real).
+  Para que Meta mande los mensajes reales hicieron falta tres cosas además del webhook: la app **publicada** (sin
+  publicar solo llegan pruebas; pide URL de privacidad → `/privacy`), el campo `messages` suscripto, y la cuenta de
+  WhatsApp Business suscripta a la app (`POST /{WABA_ID}/subscribed_apps`, desde el Explorador de la API Graph).
+  Diagnóstico sin logs de Vercel: tabla `wa_webhook_log` (cada aviso: `ok` / `no_channel` / `bad_signature` / …).
 - Política de privacidad pública en `/privacy` (EN/ES, textos en `legal` del diccionario; `#borrar` = cómo borrar
   datos; mail de `CONTACT_EMAIL`). Meta la pide para publicar la app: sin publicar, el webhook solo recibe pruebas.
 - Lista de espera de la home: tabla `waitlist` (`/api/waitlist`, público, con trampa para bots y límite por IP).
