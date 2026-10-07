@@ -25,6 +25,9 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    Con cobros, el período pasa a contarse desde la fecha de pago
    ✅ Página de planes al costo + 5 % (`/pricing`, `lib/pricing.ts`). Falta calibrar los supuestos con el consumo
    real (tabla `usage`: costo promedio por respuesta / generación) y revisarlos si cambian los precios de DeepSeek
+5. [ ] **Agencias**: una cuenta que maneja los notHumans, puestos y números de varios clientes (agencias,
+   community managers). Cada cliente separado (sus datos no se mezclan), con su consumo aparte; ver si el cliente
+   entra a ver su bandeja o solo la agencia
 
 ## Orden acordado
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
@@ -34,6 +37,9 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    (cuenta de servicio, solo lectura), elige columnas visibles/privadas, sincronizamos cada pocos minutos a una
    copia y el notHuman busca ahí (solo las filas que importan, pegadas al último mensaje). CSV como respaldo
 3. [ ] Conexiones: Google Calendar con cuenta de servicio (solo lectura) + mail propio del puesto
+   - [ ] **Cobrar en el chat** (Mercado Pago): el notHuman manda un link de pago generado para ese pedido y el
+     pago se valida por el webhook de Mercado Pago (no por lo que diga el cliente ni por un comprobante); con el
+     pago aprobado avisa en la charla y al dueño. WhatsApp no tiene un "Pagar" con Google/Apple Pay en Argentina
 4. [ ] WhatsApp con **flujo propio** (decidido: nada de n8n ni bandejas de terceros en el medio). API oficial
    (Cloud API): webhook firmado → guardar mensaje (idempotente por id) → esperar unos segundos por si manda más
    (cola) → responder con personalidad + puesto + catálogo → burbujas de a una. Tablas `channels`,
@@ -48,6 +54,14 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    - [ ] Token permanente (el temporal de "Pruébalo" vence en horas) y probar el modo automático
    - [ ] Filtro de datos personales: que también cambie nombres propios por un marcador (`{owner_name}`)
    - [ ] Pasar a una persona automático (el modelo marca `handoff` y la charla queda en modo humano) + aviso al dueño
+   - [ ] **Consultar al dueño** ("subir el nivel de atención"): cuando el notHuman no puede validar o hacer algo
+     (un descuento, una seña, un dato que no tiene), le escribe al dueño a su número con el problema (plantilla de
+     WhatsApp con botones: sí / no / respondo yo), al cliente le manda un mensaje de espera ("dejame que lo
+     consulto"), y con la respuesta del dueño sigue la charla. Si el dueño no contesta en X minutos, pasa a una
+     persona. Falta definir: número del operador por puesto, qué cosas siempre se consultan (reglas del puesto)
+   - [ ] **No volver a saludar / ficha del cliente**: que no arranque cada respuesta como si fuera el primer mensaje
+     (regla en el prompt: si ya hubo charla, seguirla). Y una ficha por cliente (nombre, qué preguntó, qué compró,
+     notas del dueño) que se suma al prompt cuando vuelve otro día, aunque la ventana de 24 h haya vencido
    - [ ] Guardar las correcciones de la bandeja como ejemplos del notHuman (como "✎ corregir" del test drive)
    - [ ] Token por canal (cifrado) para la etapa C; hoy hay uno solo en `WHATSAPP_TOKEN`
    - [ ] (opcional, más adelante) API pública `/api/v1/reply` con API keys, para quien quiera usar n8n/Make/Zapier
