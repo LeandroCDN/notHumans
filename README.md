@@ -52,6 +52,10 @@ npm run dev
    puesto del test drive, de a una burbuja. Bandeja con las charlas: aprobar/corregir/descartar borradores, tomar
    la charla y escribir vos, pedir una sugerencia. Las notas de voz se transcriben. Sin Meta hay un simulador.
 
+10. **Planes** (`/pricing`, público, y pestaña Planes en la app): Free, Pro y Business al costo + 5 %. El cálculo
+    está en `lib/pricing.ts` (costo de usar todo el cupo con los precios de `lib/llm/models.ts`, infra repartida y
+    comisión del cobro); el tope de gasto en IA de cada plan es lo que cubre el precio.
+
 ## Tests
 
 ```bash

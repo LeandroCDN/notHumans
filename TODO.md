@@ -1,6 +1,6 @@
 # TODO — notHumans
 
-## Ahora: Supabase (guardar y versionar notHumans)
+## Hecho: Supabase (guardar y versionar notHumans)
 - [x] Crear el proyecto en supabase.com y conectar el conector de Supabase a Claude
 - [x] Aplicar las migraciones de `supabase/migrations/`
 - [x] Variables en Vercel: `SUPABASE_URL` y `SUPABASE_SECRET_KEY` (solo server, nunca al navegador)
@@ -13,7 +13,7 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
 1. [x] **Cuentas y planes**: Google (Supabase Auth) + cuentas fijas de antes; perfiles con plan (Free/Pro/Business/
    Admin, en `lib/plans.ts`), consumo en `usage` con topes por mes y tope de costo oculto, panel de admin para
    asignar planes y ver pedidos de acceso, cada cuenta ve solo lo suyo
-   - [ ] Configurar Google: cliente OAuth en Google Cloud + proveedor en Supabase + `AUTH_GOOGLE=1` en Vercel
+   - [x] Configurar Google: cliente OAuth en Google Cloud + proveedor en Supabase + `AUTH_GOOGLE=1` en Vercel
    - [ ] Cuando haya dominio propio: entrar con código por mail (Resend + Supabase Auth)
    - [ ] Borrar mi cuenta (borra todo en cascada) y exportar mis datos
 2. [ ] **Privacidad**: cada notHuman 🔒 privado (default) o 🌍 público. Publicar es un paso: alias, consentimiento
@@ -57,19 +57,21 @@ La idea: el notHuman es **cómo habla**; el puesto es **dónde trabaja y con qu�
 persona puede atender varios negocios y cambiar una regla no obliga a regenerar la personalidad.
 Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el negocio dice que no, no da).
 
-- [ ] **Puesto** (se configura una vez, se edita en la web):
+- [x] **Puesto** (se configura una vez, se edita en la web) → hecho en Puestos, entrega 1:
   - qué es el negocio, qué vende, a quién (cliente objetivo)
   - reglas: cambios y devoluciones, medios de pago, horarios, zonas y formas de envío
   - límites: "nunca descuento por WhatsApp", "factura A → derivar a un humano"
   - qué puede hacer: vender, tomar pedidos, atender reclamos, cuándo pasar la charla a una persona
-  - mover acá lo que hoy pide el formulario de creación (qué vende, audiencia, roles, notas)
+- [ ] Mover al puesto lo que hoy pide el formulario de creación (qué vende, audiencia, roles, notas): sigue en
+  `components/create/business-form.tsx`
 - [ ] **Datos del momento** (stock, precios, promos, estado de un pedido): no se guardan en notHumans,
   los manda el sistema del negocio en cada consulta para que nunca queden viejos
 - [ ] Test drive con panel de "datos de prueba" (precio = $48.000, envío = 3 días…) que completa los marcadores
 - [ ] **API** `POST /api/v1/reply`: notHuman + puesto + conversación + datos del momento → mensajes listos,
   con key por cliente
-- [ ] Averiguar de dónde sale el stock (planilla, Tiendanube, Shopify, MercadoLibre…) para ver si conviene
-  integración directa o que lo mande el negocio por la API
+- [x] Averiguar de dónde sale el stock (planilla, Tiendanube, Shopify, MercadoLibre…) para ver si conviene
+  integración directa o que lo mande el negocio por la API → decidido: Google Sheet compartido con el robot
+  (ver Orden acordado, Puestos entrega 2)
 
 ## Notas de voz
 - [x] Transcribir los audios del .zip "con archivos" (Groq Whisper) y sumarlos a las conversaciones con 🎤
@@ -80,6 +82,7 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 - [x] `/c/<token>` para chatear sin cuenta, con tope de respuestas por link y de mensajes por minuto
 - [ ] Elegir el tope de respuestas al crear el link (hoy 300) y ver las charlas que tuvo la gente
 - [ ] Con el "puesto de trabajo" y los datos de prueba, que el link muestre datos en vez de {price}
+  (con puesto ya usa los datos que tenga el puesto; falta el stock y los datos de prueba)
 
 ## Nota: legal y datos personales (antes de conectar el primer negocio real)
 > No es asesoramiento legal: hacer una consulta con un abogado de datos personales antes de tener clientes.
