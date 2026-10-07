@@ -98,6 +98,6 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
 9. ✅ Sección notHumans: Explorar + test drive + perfil en una sola vista
 10. ✅ Puestos, entrega 1: crear/editar (contame el laburo + audio, IA que ordena), asignar, chat y link con puesto
 11. ✅ Cuentas con Google + planes (Free/Pro/Business/Admin) + consumo por mes + panel de admin
-12. ✅ WhatsApp etapa A: webhook + canales + bandeja con borradores (falta probarlo con Meta de verdad)
+12. ✅ WhatsApp etapa A: webhook + canales + bandeja con borradores (probado con el número de prueba de Meta)
 13. ⏭️ Stock desde Google Sheets; WhatsApp etapa B (pasar a una persona automático); privacidad y Comunidad.
     Ver `TODO.md`

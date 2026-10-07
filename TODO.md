@@ -42,8 +42,8 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    ventana de 24 h, política de Meta sobre bots de IA (cambió a principios de 2026)
    - [x] Etapa A en código: webhook + canales + bandeja (borrador / fuera de horario / automático / apagado),
      tomar la charla, sugerir, audios transcriptos, simulador sin Meta
-   - [x] Probado con el número de prueba real: llega el mensaje y se arma el borrador
-   - [ ] Probar el envío con el token permanente (el temporal de "Pruébalo" vence en horas)
+   - [x] Probado con el número de prueba real: llega el mensaje, se arma el borrador y al aprobarlo llega al celu
+   - [ ] Token permanente (el temporal de "Pruébalo" vence en horas) y probar el modo automático
    - [ ] Filtro de datos personales: que también cambie nombres propios por un marcador (`{owner_name}`)
    - [ ] Pasar a una persona automático (el modelo marca `handoff` y la charla queda en modo humano) + aviso al dueño
    - [ ] Guardar las correcciones de la bandeja como ejemplos del notHuman (como "✎ corregir" del test drive)
