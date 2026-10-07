@@ -22,6 +22,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
     { href: "/app/explore", label: t.header.nav.nothumans },
     { href: "/app/jobs", label: t.header.nav.jobs },
     { href: "/app/whatsapp", label: t.header.nav.whatsapp },
+    { href: "/app/pricing", label: t.header.nav.pricing },
   ];
 
   return (
@@ -30,7 +31,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
         <Link href="/app" className="shrink-0">
           <Logo className="text-2xl" />
         </Link>
-        {/* En el celu no entran las cuatro secciones: el menú se desliza. */}
+        {/* En el celu no entran todas las secciones: el menú se desliza. */}
         <nav className="-mr-4 flex min-w-0 gap-1 overflow-x-auto pr-4 text-sm [scrollbar-width:none] sm:mr-0 sm:pr-0">
           {nav.map((n) => {
             const active = path.startsWith(n.href);

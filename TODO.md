@@ -23,6 +23,8 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    3 respuestas por notHuman (cuenta para el que chatea; los topes ya están en el plan Free); reportar
 4. [ ] **Cobros**: checkout (MercadoPago / Stripe) que solo escribe `plan`, `plan_source` y `plan_until`.
    Con cobros, el período pasa a contarse desde la fecha de pago
+   ✅ Página de planes al costo + 5 % (`/pricing`, `lib/pricing.ts`). Falta calibrar los supuestos con el consumo
+   real (tabla `usage`: costo promedio por respuesta / generación) y revisarlos si cambian los precios de DeepSeek
 
 ## Orden acordado
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans

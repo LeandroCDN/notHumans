@@ -30,7 +30,8 @@ export type Limits = {
   /** Comunidad: respuestas para probar cada notHuman público ajeno, y tope por día. */
   communityRepliesPerNotHuman: number;
   communityRepliesPerDay: number;
-  /** Red de seguridad, oculta: si en el mes gastó esto en IA, se corta todo hasta el mes que viene. */
+  /** Red de seguridad, oculta: si en el mes gastó esto en IA, se corta todo hasta el mes que viene.
+   *  Es lo que cubre el precio (`lib/pricing.ts`): el costo de usar todo el cupo, redondeado a 50 centavos. */
   costCapUsd: number;
 };
 
@@ -65,7 +66,7 @@ export const PLANS: Record<PlanId, Limits> = {
     connections: false,
     communityRepliesPerNotHuman: ALL,
     communityRepliesPerDay: ALL,
-    costCapUsd: 5,
+    costCapUsd: 2,
   },
   business: {
     nothumans: 15,
@@ -80,7 +81,7 @@ export const PLANS: Record<PlanId, Limits> = {
     connections: true,
     communityRepliesPerNotHuman: ALL,
     communityRepliesPerDay: ALL,
-    costCapUsd: 40,
+    costCapUsd: 24,
   },
   admin: {
     nothumans: ALL,

@@ -30,6 +30,8 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   generación descuenta al empezar (`/api/generate/start` da un ticket firmado que piden extract/profile; si falla
   antes del perfil, `/api/generate/cancel` la devuelve). El link público descuenta del dueño. Sin cupo → 402
   `{error:"limit", kind}`. Planes a mano en `/app/admin` (sin cobros todavía). En el navegador: `useMe()` (`lib/me.ts`).
+  Precios al costo + 5 % (`lib/pricing.ts`, página pública `/pricing` y pestaña `/app/pricing`): el precio cubre el
+  tope de gasto en IA del plan (`costCapUsd` = usar todo el cupo, redondeado), la infra repartida y la comisión del cobro.
 - Cada cuenta ve solo lo suyo: notHumans y puestos tienen `user_id` y todos los métodos de los repos lo piden
   (`getAny` solo para el link público). Seguimos con RLS sin políticas: el navegador nunca habla con la base.
 - Proveedor de IA: DeepSeek (el usuario no pudo pagar Anthropic). Interfaz en `lib/llm/` para sumar otros.

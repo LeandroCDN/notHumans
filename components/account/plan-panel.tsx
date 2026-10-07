@@ -40,7 +40,9 @@ function Notice({ tone, delay, children }: { tone: "ok" | "warn"; delay: number;
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       className={`rounded-2xl border px-4 py-3 text-sm ${
-        tone === "ok" ? "border-acid/30 bg-acid/[0.06] text-acid" : "border-amber-300/30 bg-amber-300/[0.06] text-amber-200"
+        tone === "ok"
+          ? "border-acid/30 bg-acid/[0.06] text-acid"
+          : "border-amber-300/30 bg-amber-300/[0.06] text-amber-200"
       }`}
     >
       {children}
@@ -80,7 +82,7 @@ function FreeCard({ me, delay }: { me: Me; delay: number }) {
 }
 
 /** Botón "Pedir acceso" → "Acceso pedido ✓". */
-export function RequestAccess({ me }: { me: Me }) {
+export function RequestAccess({ me, align = "right" }: { me: Me; align?: "left" | "right" }) {
   const f = useI18n().t.account.free;
   const [busy, setBusy] = useState(false);
   const done = me.accessRequestedAt !== null;
@@ -88,7 +90,12 @@ export function RequestAccess({ me }: { me: Me }) {
     <div className="shrink-0">
       <AnimatePresence mode="wait" initial={false}>
         {done ? (
-          <motion.div key="done" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-right">
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={align === "right" ? "text-right" : ""}
+          >
             <p className="font-medium text-acid">{f.requested}</p>
             <p className="text-sm text-white/45">{f.requestedSub}</p>
           </motion.div>
@@ -152,7 +159,9 @@ function Meters({ me, delay }: { me: Me; delay: number }) {
             <div key={r.label}>
               <p className="flex items-baseline gap-1">
                 <span className={`font-serif text-3xl ${full ? "text-rose" : ""}`}>{nf.format(r.used)}</span>
-                <span className="font-mono text-[11px] text-white/40">/ {r.max === null ? m.unlimited : nf.format(r.max)}</span>
+                <span className="font-mono text-[11px] text-white/40">
+                  / {r.max === null ? m.unlimited : nf.format(r.max)}
+                </span>
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-white/45">{r.label}</p>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">

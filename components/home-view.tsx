@@ -42,9 +42,14 @@ export function HomeView({
       </main>
       <footer className="flex flex-col items-center justify-between gap-2 px-6 py-10 font-mono text-[11px] text-white/30 sm:flex-row sm:px-10">
         <span>notHumans © 2026</span>
-        <a href="/privacy" className="transition hover:text-acid">
-          {t.home.privacy}
-        </a>
+        <span className="flex gap-4">
+          <a href="/pricing" className="transition hover:text-acid">
+            {t.home.pricing}
+          </a>
+          <a href="/privacy" className="transition hover:text-acid">
+            {t.home.privacy}
+          </a>
+        </span>
         <span>{t.home.footer}</span>
       </footer>
     </LoginProvider>
@@ -72,6 +77,9 @@ function Nav() {
         <span className="hidden font-mono text-[11px] text-white/30 md:inline">
           {t.home.press} <kbd className="rounded border border-white/15 px-1.5 py-0.5 text-white/60">L</kbd>
         </span>
+        <a href="/pricing" className="text-sm text-white/55 transition hover:text-acid">
+          {t.home.pricing}
+        </a>
         <LanguageSwitch />
         <Magnetic>
           <button
