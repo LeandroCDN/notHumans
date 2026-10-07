@@ -3,6 +3,7 @@ import { z } from "zod";
 import { type ChatTurn as LlmTurn, llmJson } from "@/lib/llm";
 import { type ModelOption, costUsd } from "@/lib/llm/models";
 import { nowNote } from "@/lib/job/manual";
+import { stockPrompt } from "@/lib/stock/map";
 import { type ChatJob, type ChatPersona, chatSystemPrompt } from "./prompts";
 
 // Una respuesta del notHuman a una conversación. La usan el test drive y el link público.
@@ -30,14 +31,22 @@ export async function replyAs(persona: ChatPersona, turns: Turn[], option: Model
       ? { role: "user", content: t.texts.join("\n") }
       : { role: "assistant", content: JSON.stringify({ messages: t.texts }) },
   );
-  // Con puesto, la hora del negocio va pegada al último mensaje (no al prompt fijo, que se cachea).
+  // Con puesto, la hora del negocio va pegada al último mensaje (no al prompt fijo, que se cachea). Con stock
+  // grande, también las filas que coinciden con lo que viene preguntando el cliente (sus últimos mensajes).
   const last = turns[turns.length - 1].texts.join("\n");
+  const asked = turns
+    .filter((t) => t.from === "client")
+    .slice(-3)
+    .map((t) => t.texts.join(" "))
+    .join(" ");
+  const stock = job?.stock ? stockPrompt(job.stock, asked, job.content.lang) : null;
+  const notes = job ? [stock?.note, nowNote(job.content, new Date())].filter(Boolean).join("\n") : "";
   const started = Date.now();
   const { data, usage, model, reasoning } = await llmJson({
     task: "chat",
-    system: chatSystemPrompt(persona, job),
+    system: chatSystemPrompt(persona, job, stock?.fixed),
     history,
-    user: job ? `${last}\n\n${nowNote(job.content, new Date())}` : last,
+    user: notes ? `${last}\n\n${notes}` : last,
     schema: Reply,
     model: option,
     maxTokens: 1000,

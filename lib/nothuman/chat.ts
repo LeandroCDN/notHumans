@@ -26,7 +26,7 @@ export async function sendChat(
   nh: NotHuman,
   turns: ChatTurn[],
   modelId: string,
-  job?: { name: string; content: JobContent } | null,
+  job?: { id?: string; name: string; content: JobContent } | null,
 ): Promise<ChatReply> {
   const res = await fetch("/api/chat", {
     method: "POST",

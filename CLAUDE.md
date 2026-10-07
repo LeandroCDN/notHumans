@@ -8,8 +8,8 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
 ## Cómo trabajar acá
 - Hablar con el usuario en español rioplatense (voseo). Comentarios de código en español.
 - Pushear directo a `main` (pedido explícito del usuario: nada de PRs). También mantener la rama de la sesión al día.
-- Antes de pushear: `npx tsc --noEmit`, `npm test`, `npm run build`, y probar en el navegador con Playwright
-  (Chromium en `/opt/pw-browsers/chromium`) cuando cambia la UI.
+- Antes de pushear: `npx tsc --noEmit`, `npm test` y `npm run build`. Las pruebas en el navegador las hace el
+  usuario (pedido explícito): no correr Playwright; al terminar, decirle qué probar.
 - La web tiene que ser linda y sorprendente (Motion para animaciones). Todo texto de UI va en
   `lib/i18n/dictionaries.ts` en inglés (default) y español.
 - La red del contenedor de Claude bloquea DeepSeek, Groq, Vercel y Supabase: para probar sin key, `LLM_MOCK=1`
@@ -83,6 +83,18 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
   publicar solo llegan pruebas; pide URL de privacidad → `/privacy`), el campo `messages` suscripto, y la cuenta de
   WhatsApp Business suscripta a la app (`POST /{WABA_ID}/subscribed_apps`, desde el Explorador de la API Graph).
   Diagnóstico sin logs de Vercel: tabla `wa_webhook_log` (cada aviso: `ok` / `no_channel` / `bad_signature` / …).
+- Stock (`lib/stock/`, `lib/google/sheets.ts`, `components/job/stock-panel.tsx`, tabla `stock_sources`, una por
+  puesto): un solo robot (cuenta de servicio, `GOOGLE_SERVICE_ACCOUNT_JSON` en Vercel; JWT RS256 firmado a mano, sin
+  librerías) que lee lo que cada cliente le comparte como Lector. La planilla tiene que ser de la cuenta de Google con
+  la que entra (Drive `owners`; los admins pueden cualquiera). **Sin plantilla**: `/inspect` lee la planilla y la IA
+  (tarea `stock_map`, cuenta como `structure`; si falla, `heuristicMap` por los títulos) propone el mapa: pestañas
+  catálogo/info/no usar, fila de títulos y rol de cada columna (producto, código, precio, stock, dato, privado; ante
+  la duda, privado). El dueño lo revisa y `PUT` guarda el mapa + la copia (`applyMap`: solo columnas visibles; lo
+  privado no se guarda). Si cambian las columnas → `needs_review` y las nuevas no se usan. `stockForReply` relee si
+  pasaron 5 min (espera hasta 4 s). En el prompt: si entra (≤14k caracteres) va entero en la parte fija (caché); si
+  no, la info fija y las filas que coinciden con los últimos mensajes del cliente pegadas al último. Requiere plan
+  con `connections`. Robot: `nothumans-stock@nothuman-510723.iam.gserviceaccount.com`. Planilla de prueba del usuario:
+  "Motorbike Stock". Sin la clave (dev / `LLM_MOCK=1`) hay planillas de mentira (`lib/stock/fixtures.ts`).
 - Política de privacidad pública en `/privacy` (EN/ES, textos en `legal` del diccionario; `#borrar` = cómo borrar
   datos; mail de `CONTACT_EMAIL`). Meta la pide para publicar la app: sin publicar, el webhook solo recibe pruebas.
 - Lista de espera de la home: tabla `waitlist` (`/api/waitlist`, público, con trampa para bots y límite por IP).
@@ -105,5 +117,6 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
 10. ✅ Puestos, entrega 1: crear/editar (contame el laburo + audio, IA que ordena), asignar, chat y link con puesto
 11. ✅ Cuentas con Google + planes (Free/Pro/Business/Admin) + consumo por mes + panel de admin
 12. ✅ WhatsApp etapa A: webhook + canales + bandeja con borradores (probado con el número de prueba de Meta)
-13. ⏭️ Stock desde Google Sheets; WhatsApp etapa B (pasar a una persona automático); privacidad y Comunidad.
+13. ✅ Stock desde Google Sheets (puestos, entrega 2): robot + mapa con IA que revisa el dueño + copia visible
+14. ⏭️ WhatsApp etapa B (pasar a una persona automático); privacidad y Comunidad.
     Ver `TODO.md`

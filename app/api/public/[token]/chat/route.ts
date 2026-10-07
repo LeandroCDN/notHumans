@@ -5,6 +5,7 @@ import { sessionFrom } from "@/lib/auth";
 import { MissingKeyError } from "@/lib/llm";
 import { findModel } from "@/lib/llm/models";
 import { jobs } from "@/lib/db/jobs";
+import { stockForReply } from "@/lib/stock/service";
 import { notHumans } from "@/lib/db/nothumans";
 import { profiles } from "@/lib/db/profiles";
 import { shares } from "@/lib/db/shares";
@@ -63,7 +64,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     if (!account.limits.shareLinks) return error("limit", 429);
     if (!(await shares().use(token))) return error("limit", 429);
     // El puesto también sale de la base: el visitante no puede cambiar ni las reglas ni los datos.
-    const job = nh.jobId ? await jobs().getAny(nh.jobId) : null;
+    const stored = nh.jobId ? await jobs().getAny(nh.jobId) : null;
+    const job = stored && { ...stored, stock: await stockForReply(stored.id, owner.id) };
     const reply = await metered(account, "reply", () => replyAs(chatPersona(nh), parsed.data.turns, findModel(undefined), job), {
       nothumanId: nh.id,
     });

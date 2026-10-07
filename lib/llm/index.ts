@@ -12,7 +12,7 @@ export type ChatTurn = { role: "user" | "assistant"; content: string };
 
 export type JsonRequest<T> = {
   /** Para el mock: qué tarea es, así puede devolver algo con sentido. */
-  task: "extract" | "profile" | "chat" | "job";
+  task: "extract" | "profile" | "chat" | "job" | "stock_map";
   system: string;
   /** Turnos anteriores (chat). Van entre el system y el último mensaje, así el prefijo se cachea. */
   history?: ChatTurn[];

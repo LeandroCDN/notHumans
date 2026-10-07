@@ -1,4 +1,6 @@
 import "server-only";
+import { heuristicMap, norm, queryTokens } from "@/lib/stock/map";
+import type { RawSheet } from "@/lib/stock/types";
 import type { JsonRequest, JsonResponse } from "./index";
 
 // Modelo de mentira para desarrollar sin key (LLM_MOCK=1). Lee la transcripción que le mandamos
@@ -60,8 +62,38 @@ const MOCK_PROFILE = {
   doNots: ["(mock) No usa mayúsculas"],
 };
 
-function chatReply(user: string, withJob: boolean) {
-  const ask = user.replace(/\n*\[[^\]]*\]\s*$/, "");
+/** Con stock: busca la fila que más se parece a lo que pregunta el cliente (entre la lista fija y las filas que
+ *  llegan entre corchetes) y la cuenta. Así se puede probar todo el circuito sin modelo. */
+function stockReply(system: string, user: string, ask: string) {
+  const lines = [...system.split("## Stock")[1]?.split("\n") ?? [], ...user.split("\n")].filter((l) => l.startsWith("- "));
+  const tokens = queryTokens(ask);
+  const best = lines
+    .map((l) => ({ l, n: tokens.filter((t) => norm(l).split(" ").some((w) => w.startsWith(t))).length }))
+    .sort((a, b) => b.n - a.n)[0];
+  if (!best?.n) return { messages: ["(mock) eso no lo tengo en la lista", "querés que te pase lo que hay?"], used: ["stock"] };
+  return { messages: ["(mock) holaa! mirá lo que tengo 🙌", best.l.slice(2), "te la separo?"], used: ["stock"] };
+}
+
+/** La vista previa que mandamos para el mapa → la planilla de nuevo → el mapa por los títulos. */
+function stockMap(user: string) {
+  const raw: RawSheet = { title: "", tabs: [] };
+  for (const line of user.split("\n")) {
+    const tab = line.match(/^=== Tab (".*") \(\d+ rows\) ===$/);
+    if (tab) raw.tabs.push({ name: JSON.parse(tab[1]) as string, rows: [] });
+    const row = line.match(/^Row \d+: (\{.*\})$/);
+    if (row && raw.tabs.length) {
+      const cells = JSON.parse(row[1]) as Record<string, string>;
+      const out: string[] = [];
+      for (const [i, v] of Object.entries(cells)) out[Number(i)] = v;
+      raw.tabs.at(-1)!.rows.push(Array.from(out, (v) => v ?? ""));
+    }
+  }
+  return heuristicMap(raw);
+}
+
+function chatReply(system: string, user: string, withJob: boolean) {
+  const ask = user.replace(/\n*\[[^\]]*\]/g, "").trim();
+  if (/## Stock/.test(system)) return stockReply(system, user, ask);
   if (withJob) {
     return {
       messages: ["(mock) holaa! te cuento según el puesto 🙌", "envíos solo zona sur y llega al otro día", "te lo separo?"],
@@ -99,10 +131,12 @@ export async function mockJson<T>(req: JsonRequest<T>): Promise<JsonResponse<T>>
     req.task === "extract"
       ? extractFromTranscript(req.user)
       : req.task === "chat"
-        ? chatReply(req.user, /## (Tu puesto|Your job):/.test(req.system))
+        ? chatReply(req.system, req.user, /## (Tu puesto|Your job):/.test(req.system))
         : req.task === "job"
           ? jobFromBrief(req.user)
-          : MOCK_PROFILE;
+          : req.task === "stock_map"
+            ? stockMap(req.user)
+            : MOCK_PROFILE;
   const data = req.schema.parse(raw);
   // Simula la caché de prefijo: lo que ya se mandó en un request anterior (system + historial) sale de caché.
   const history = (req.history ?? []).reduce((n, t) => n + t.content.length, 0);

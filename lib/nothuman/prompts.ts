@@ -1,5 +1,6 @@
 import { jobManual } from "@/lib/job/manual";
 import type { JobContent } from "@/lib/job/schema";
+import type { StockSnapshot } from "@/lib/stock/types";
 import { type Example, INTENTS, PLACEHOLDERS, type BusinessInput, type Profile } from "./schema";
 
 // Los prompts van en inglés (los modelos los siguen mejor) y piden explícitamente el idioma de salida.
@@ -104,14 +105,15 @@ const LENGTH_HINT = {
   long: "long",
 } as const;
 
-/** El puesto donde trabaja el notHuman (opcional): su manual entra al prompt y sus reglas mandan. */
-export type ChatJob = { name: string; content: JobContent };
+/** El puesto donde trabaja el notHuman (opcional): su manual entra al prompt y sus reglas mandan.
+ *  `stock` es la copia visible de su planilla, si tiene una conectada. */
+export type ChatJob = { name: string; content: JobContent; stock?: StockSnapshot | null };
 
 /**
  * El notHuman respondiendo a un cliente. Todo es fijo por notHuman (perfil + ejemplos canónicos + manual del
  * puesto), así de un mensaje al siguiente el proveedor sirve el system y el historial desde la caché.
  */
-export function chatSystemPrompt(p: ChatPersona, job?: ChatJob | null): string {
+export function chatSystemPrompt(p: ChatPersona, job?: ChatJob | null, stock = ""): string {
   const pr = p.profile;
   const list = (label: string, items: string[]) => (items.length ? `- ${label}: ${items.map((x) => `"${x}"`).join(", ")}\n` : "");
   const line = (label: string, v: string) => (v.trim() ? `- ${label}: ${v.trim()}\n` : "");
@@ -130,7 +132,7 @@ export function chatSystemPrompt(p: ChatPersona, job?: ChatJob | null): string {
 Write exactly like ${p.owner} always writes. Customers must not notice any difference.
 
 ${jobManual(job.name, job.content)}
-`
+${stock ? `\n${stock}\n` : ""}`
     : `You are ${p.owner}, the person behind "${p.name}", answering a customer on WhatsApp.
 Write exactly like them. Customers must not notice any difference.
 
@@ -141,8 +143,16 @@ ${businessBlock(p.owner, p.business)}`;
     ? `- Use the facts in "Your job" above. If you need a fact that isn't there, write a placeholder instead of inventing it: ${placeholders}.
   Never make up prices, stock, links, dates or any other data.
 - The house rules of your job override your style and your examples. If the examples do something a rule forbids, follow the rule.
-- If one of the hand-over cases happens, answer with the hand-over message in your own style and don't try to solve it yourself.
-- The customer's last message may end with a [note in brackets] with the current time: you wrote nothing there and the customer can't see it. Use it to know whether the business is open.
+${
+        stock
+          ? `- Products, prices, stock and delivery times come from the "Stock" list above (or from the [stock rows in brackets] after the customer's message). Use them exactly as they are written and never invent a product, price or stock that isn't there. If something shows no units or "No", say it isn't available right now and offer what the list says (delivery time, booking) or a similar product that is available.\n`
+          : ""
+      }- If one of the hand-over cases happens, answer with the hand-over message in your own style and don't try to solve it yourself.
+- ${
+        stock
+          ? "The customer's last message may end with [notes in brackets] (the current time, matching stock rows)"
+          : "The customer's last message may end with a [note in brackets] with the current time"
+      }: you wrote nothing there and the customer can't see it. Use it to know whether the business is open.
 - Answer with a single JSON object: {"messages": ["<WhatsApp message>", "..."], "used": ["<short label>", "..."]}, one item per message you would send, in order. In "used", list in a few words each part of your job you relied on (e.g. "rule: shipping", "opening hours"); leave it empty if none.`
     : `- You don't know the business facts. Whenever you need one, write a placeholder instead of inventing it: ${placeholders}.
   For example, write {price} where the price goes. Never make up prices, stock, links, dates or any other data.
@@ -188,4 +198,30 @@ Rules:
 - One rule per item: policies (returns, payments, shipping, discounts), prohibitions ("never") and useful facts ("info"). Keep them short and concrete; keep numbers and amounts the owner gave.
 - Don't invent anything the owner didn't say: leave a field as "" or an empty list. If no hours were given, use Monday to Friday 09:00-18:00.
 - Write every text in ${LANG_NAME[uiLang]}, keeping the owner's own words where possible.`;
+}
+
+/** La planilla de stock de un negocio (cualquier forma) → el mapa: qué pestañas usar, dónde están los títulos
+ *  y qué es cada columna. Lo revisa el dueño antes de guardarlo. */
+export function stockMapPrompt(uiLang: UiLang): string {
+  return `A business shared its spreadsheet so an assistant can answer customers on WhatsApp with real products, prices and stock.
+Every spreadsheet is different: titles may not be on the first row, there may be blank rows, notes, several tables or tabs that have nothing to do with customers.
+You get the first rows of each tab; each row is a JSON object from column number (0 = column A) to cell text.
+
+Answer with a single JSON object:
+{
+  "tabs": [
+    {
+      "name": "<tab name, exactly as given>",
+      "use": "catalog" | "info" | "ignore",
+      "headerRow": <number of the row with the column titles>,
+      "columns": [ { "index": <column number>, "role": "name" | "id" | "price" | "stock" | "detail" | "private" } ]
+    }
+  ]
+}
+
+Rules:
+- "catalog": products or services the business sells, one per row. "info": facts useful for customers (payments, promos, shipping, hours, address). "ignore": anything internal or useless for customers (salaries, suppliers, accounting, instructions, staff notes, empty tabs).
+- List every column that has a title in "headerRow". Roles: "name" what the product is (model, product, description); "id" a code or SKU; "price" any price or installment amount; "stock" quantities or availability; "detail" anything else a customer may see (brand, color, size, year, delivery time, notes for customers); "private" anything a customer must never see: costs, what the business paid, suppliers, margins, internal notes, staff or personal data.
+- When in doubt about a column, use "private". When in doubt about a tab, use "ignore".
+- Include every tab, with the exact name. Tab and column texts may be in any language; the owner's language is ${LANG_NAME[uiLang]}.`;
 }

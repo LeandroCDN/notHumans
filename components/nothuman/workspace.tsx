@@ -53,7 +53,7 @@ export function Workspace({ nh, hue, tab, onTab, onDirty }: Props) {
 
   const conv = useConversation<ChatReply>(
     async (turns) => {
-      const reply = await sendChat(nh, turns, modelId, job ? { name: job.name, content: job.content } : null);
+      const reply = await sendChat(nh, turns, modelId, job ? { id: job.id, name: job.name, content: job.content } : null);
       return { messages: reply.messages, meta: reply };
     },
     (err) => {

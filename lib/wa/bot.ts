@@ -2,6 +2,7 @@ import "server-only";
 import { LimitError, charge, metered } from "@/lib/account";
 import { sessionFrom } from "@/lib/auth";
 import { jobs } from "@/lib/db/jobs";
+import { stockForReply } from "@/lib/stock/service";
 import { notHumans } from "@/lib/db/nothumans";
 import { profiles } from "@/lib/db/profiles";
 import { logWebhook, wa } from "@/lib/db/wa";
@@ -169,7 +170,8 @@ export async function respond(conversationId: string, opts: { trigger?: string; 
 
     let reply: Awaited<ReturnType<typeof replyAs>>;
     try {
-      reply = await metered(sessionFrom(owner), "reply", () => replyAs(chatPersona(found.nh), turns, findModel(undefined), job), {
+      const stock = job ? await stockForReply(job.id, owner.id) : null;
+      reply = await metered(sessionFrom(owner), "reply", () => replyAs(chatPersona(found.nh), turns, findModel(undefined), job && { ...job, stock }), {
         nothumanId: found.nh.id,
       });
     } catch (err) {

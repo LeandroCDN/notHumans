@@ -23,6 +23,7 @@ npm run dev
 | `SUPABASE_SECRET_KEY` | Secret key de Supabase (solo server). Sin Supabase, en desarrollo se guarda en memoria |
 | `GROQ_API_KEY` | Key de Groq para transcribir notas de voz (Whisper) |
 | `WHATSAPP_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | WhatsApp (Cloud API de Meta). Sin token, en desarrollo se simula |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | El robot que lee las planillas de stock (cuenta de servicio de Google). Sin esto, en desarrollo hay planillas de mentira |
 | `LLM_MOCK=1` | Opcional: respuestas simuladas para desarrollar sin key |
 
 ## Cómo funciona
@@ -50,7 +51,12 @@ npm run dev
    puesto del test drive, de a una burbuja. Bandeja con las charlas: aprobar/corregir/descartar borradores, tomar
    la charla y escribir vos, pedir una sugerencia. Las notas de voz se transcriben. Sin Meta hay un simulador.
 
-10. **Planes** (`/pricing`, público, y pestaña Planes en la app): Free, Pro y Business al costo + 5 %. El cálculo
+10. **Stock** (pestaña Stock del puesto): el dueño le comparte su planilla de Google al robot (Lector) y pega el link.
+    No hay plantilla: la IA propone cómo entenderla (qué pestañas usar, fila de títulos, qué es cada columna y qué es
+    privado) y el dueño lo revisa. Se guarda una copia solo con lo visible (`stock_sources`), se relee cada 5 minutos
+    cuando hace falta y el notHuman responde con esos datos (test drive, link público y WhatsApp).
+
+11. **Planes** (`/pricing`, público, y pestaña Planes en la app): Free, Pro y Business al costo + 5 %. El cálculo
     está en `lib/pricing.ts` (costo de usar todo el cupo con los precios de `lib/llm/models.ts`, infra repartida y
     comisión del cobro); el tope de gasto en IA de cada plan es lo que cubre el precio.
 

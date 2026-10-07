@@ -36,7 +36,9 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
 2. [x] Puestos, entrega 1: crear (contame el laburo + audio → la IA ordena; reglas, horario, pasar a una persona),
    asignar desde notHumans, chat y link público con el puesto ("usó: …")
-   [ ] Puestos, entrega 2: stock/catálogo. Camino principal: el dueño comparte su Google Sheet con el robot
+   [x] Puestos, entrega 2: stock/catálogo (hecho: robot, mapa con IA + revisión, copia visible, prompt; falta
+   probarlo con el robot real y la planilla desordenada, el CSV de respaldo y avisarle al dueño por mail/WhatsApp
+   cuando la planilla cambie de forma). Camino principal: el dueño comparte su Google Sheet con el robot
    (cuenta de servicio, solo lectura), elige columnas visibles/privadas, sincronizamos cada pocos minutos a una
    copia y el notHuman busca ahí (solo las filas que importan, pegadas al último mensaje). CSV como respaldo
    **Sin plantilla obligatoria**: cada cliente usa su planilla como la tenga. Al conectar, la IA arma un "mapa"

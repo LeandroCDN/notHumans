@@ -12,6 +12,7 @@ import { StoreError } from "@/lib/nothuman/store";
 import { useI18n } from "../i18n";
 import { storeErrorMessage } from "../nothuman/store-ui";
 import { RecordButton } from "./record-button";
+import { StockPanel } from "./stock-panel";
 
 // Editor de un puesto: "Contame el laburo" arriba, las secciones editables abajo y el manual del empleado al costado
 // (el texto exacto que va a leer el notHuman). Guardar crea una versión nueva.
@@ -311,6 +312,8 @@ export function JobEditor({ job, workers, onDirty, justSaved, onSaved }: Props) 
             )}
           </section>
 
+          <StockPanel jobId={job?.id ?? null} />
+
           <div className="grid gap-4 lg:grid-cols-2">
             <HandoffCard content={content} set={set} />
             {/* Fuentes conectadas: pronto */}
@@ -321,7 +324,6 @@ export function JobEditor({ job, workers, onDirty, justSaved, onSaved }: Props) 
               </div>
               <div className="mt-4 grid gap-2 text-sm text-white/50">
                 {[
-                  [t.sources.sheets, t.sources.sheetsSub],
                   [t.sources.calendar, t.sources.calendarSub],
                   [t.sources.mail, t.sources.mailSub],
                 ].map(([a, b]) => (
