@@ -28,6 +28,9 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
 5. [ ] **Agencias**: una cuenta que maneja los notHumans, puestos y números de varios clientes (agencias,
    community managers). Cada cliente separado (sus datos no se mezclan), con su consumo aparte; ver si el cliente
    entra a ver su bandeja o solo la agencia
+6. [ ] **Proveedores de IA por nivel** (`lib/llm/`): Económico (API oficial de DeepSeek), Privacidad (el mismo
+   modelo de pesos abiertos en servidores de la UE o EE. UU., ej. AWS Bedrock / Azure) y Premium (Claude, GPT…).
+   Cada nivel con su precio en `lib/pricing.ts` (medir costo y caché de cada uno)
 
 ## Orden acordado
 1. [x] Fusionar Explorar + test drive + perfil en la sección notHumans
@@ -64,7 +67,8 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
      notas del dueño) que se suma al prompt cuando vuelve otro día, aunque la ventana de 24 h haya vencido
    - [ ] Guardar las correcciones de la bandeja como ejemplos del notHuman (como "✎ corregir" del test drive)
    - [ ] Token por canal (cifrado) para la etapa C; hoy hay uno solo en `WHATSAPP_TOKEN`
-   - [ ] (opcional, más adelante) API pública `/api/v1/reply` con API keys, para quien quiera usar n8n/Make/Zapier
+   - [ ] API pública `/api/v1/reply` con API keys: es la puerta para vender por plataformas de chatbots y agencias
+     (ver `VENTAS.md`), además de n8n/Make/Zapier. Prioridad después del stock
 
 ## Después: el puesto de trabajo
 La idea: el notHuman es **cómo habla**; el puesto es **dónde trabaja y con qué reglas**. Separados, la misma
@@ -103,19 +107,34 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 
 - **Guardar charlas de WhatsApp (API oficial) es normal**, con condiciones (Ley 25.326 y términos de Meta):
   política de privacidad que diga que se guardan y se procesan con IA (y con qué proveedores), usarlas solo para
-  atender, acceso restringido, borrado automático, poder mostrar/borrar los datos de un cliente si lo pide, y
-  ver si hay que inscribir la base ante la AAIP.
-- **Transferencia internacional**: DeepSeek procesa en China; la ley restringe mandar datos personales a países
-  sin "protección adecuada" (salvo consentimiento o contratos). Puede pedir otro proveedor de IA en producción.
+  atender a ese cliente de ese negocio (nunca para entrenar otros notHumans), acceso restringido, borrado
+  automático (ej.: 90 días sin actividad) y poder mostrar/borrar los datos de un cliente si lo pide. El negocio es
+  el *responsable* de los datos y notHumans el *encargado* que los procesa por cuenta de él.
+- **Ficha del cliente**: es guardar más que la charla (nombre, qué compró, notas del dueño). Misma regla: solo
+  para ese negocio, con plazo de borrado, visible y borrable por el dueño; sumarla a `/privacy`.
+- **Inscribir la base ante la AAIP**: hay que hacerlo. Es gratis, por TAD con clave fiscal (nivel 2), sin
+  renovación anual (solo se actualiza si cambia algo). El nombre y la finalidad de la base no se pueden cambiar
+  después: poner una finalidad amplia ("asistentes conversacionales para empresas"), no "venta de autos".
+- **Transferencia internacional**: la ley pide "protección adecuada" en el país de destino. La UE, Reino Unido,
+  Suiza, Uruguay, Canadá (privados) y otros están en la lista; **EE. UU. y China no** (necesitan consentimiento o
+  contrato con cláusulas modelo). En China además pesa la imagen ("¿mis chats van a China?") y que la API oficial
+  de DeepSeek no firma acuerdos de datos. Decidido: **ofrecer varios proveedores** (ver `VENTAS.md`); con
+  servidores en la UE no hace falta nada extra, en EE. UU. usar uno grande que firme el DPA.
 - **Chats subidos para crear un notHuman**: tienen mensajes de terceros (los clientes del dueño). Hoy no guardamos
   los chats crudos (solo estilo + ejemplos con marcadores y `findLeak`), pero pasan por DeepSeek al generar:
-  que el dueño lo tenga cubierto en sus términos.
+  anonimizar en el navegador antes de mandar (teléfonos, mails, DNI, nombres) y que el dueño lo tenga cubierto en
+  los términos (casilla sin marcar, guardar quién aceptó, cuándo y qué versión; volver a pedir si cambian).
+- **Datos sensibles** (salud, religión, política, vida sexual): pedir explícitamente que no se suban chats así
+  (psicólogos, nutricionistas…) y avisar si el chat parece tenerlos antes de generar.
+- **Derechos del titular**: borrar y descargar sus datos de verdad. La ley da plazos cortos (si no me equivoco,
+  10 días corridos para el acceso y 5 hábiles para corregir/borrar); `/privacy` hoy promete borrar la cuenta en
+  "30 días como máximo": revisarlo con el abogado. Los clientes finales también tienen estos derechos.
 - **Avisar que es una IA**: en Argentina no hay ley específica, pero la ley del consumidor pide información veraz
   y en la UE ya es obligatorio. El link público ya lo aclara; en WhatsApp también.
 - **Sin API oficial** (WhatsApp Web con QR): no es delito, pero viola los términos de Meta (riesgo de ban).
 - **Clonar voz**: solo con consentimiento explícito y por escrito.
-- Antes del primer negocio real: términos + política de privacidad, borrado automático de charlas, y decidir
-  qué proveedor de IA usar con datos de clientes.
+- Antes del primer negocio real: términos + política de privacidad (con plazo de borrado de charlas y fichas),
+  borrado automático de charlas, inscripción en la AAIP y el proveedor "Privacidad" disponible.
 
 ## Ideas sueltas
 - [x] Entrenar desde el chat: corregir una respuesta en el test drive ("ella lo diría así") y que entre como

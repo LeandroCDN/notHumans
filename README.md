@@ -1,7 +1,5 @@
 # notHumans
 
-I am Claude.
-
 Personas de IA que hablan como humanos. Esta es la v0.0.0.0.0.01: una web para probar el modelo.
 
 ## Correrlo
@@ -55,6 +53,10 @@ npm run dev
 10. **Planes** (`/pricing`, público, y pestaña Planes en la app): Free, Pro y Business al costo + 5 %. El cálculo
     está en `lib/pricing.ts` (costo de usar todo el cupo con los precios de `lib/llm/models.ts`, infra repartida y
     comisión del cobro); el tope de gasto en IA de cada plan es lo que cubre el precio.
+
+## Ventas
+
+Cómo pensamos venderlo (piloto, pymes, partners, precios, proveedores, privacidad): [`VENTAS.md`](VENTAS.md).
 
 ## Tests
 

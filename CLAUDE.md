@@ -1,7 +1,9 @@
 # notHumans — contexto para Claude
 
 Plataforma para crear "personas" de IA (notHumans) que escriben como una persona real, a partir de sus chats
-de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el modelo; no hay clientes.
+de WhatsApp, y que atienden a los clientes de un negocio (puesto + número de WhatsApp). Está en beta: cuentas
+abiertas con planes, precios al costo y lista de espera; todavía sin clientes que paguen. El primer piloto es el
+negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes en `TODO.md`.
 
 ## Cómo trabajar acá
 - Hablar con el usuario en español rioplatense (voseo). Comentarios de código en español.
@@ -14,9 +16,11 @@ de WhatsApp. Por ahora es una web para que el dueño del proyecto pruebe el mode
   (guarda en memoria). La base se maneja con el conector de Supabase.
 
 ## Decisiones tomadas
-- notHumans empezó como capa de personalidad pura; ahora suma el puesto (reglas) y va a sumar el stock
-  (Google Sheets compartido con un robot, solo lectura) y WhatsApp con **flujo propio** (Cloud API oficial, sin
-  n8n ni plataformas de terceros en el medio). Plan en `TODO.md`.
+- notHumans empezó como capa de personalidad pura; ahora suma el puesto (reglas) y WhatsApp con **flujo propio**
+  (Cloud API oficial, sin n8n ni plataformas de terceros en el medio; etapa A hecha), y va a sumar el stock
+  (Google Sheets compartido con un robot, solo lectura). Plan en `TODO.md`.
+- Para vender: directo a pymes (SaaS), armado a medida, y por plataformas de chatbots y agencias vía la API
+  `/api/v1/reply` (pendiente). Proveedores de IA por nivel (Económico / Privacidad / Premium). Ver `VENTAS.md`.
 - Personalidad separada de los datos: los ejemplos guardan marcadores (`{price}`, `{product}`…) en vez de
   datos concretos, para que la persona sea reutilizable. `findLeak` descarta ejemplos con datos sueltos.
 - Cuentas (`lib/auth.ts`, `lib/db/profiles.ts`): se entra con Google vía Supabase Auth (PKCE a mano en
