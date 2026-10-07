@@ -39,6 +39,13 @@ La cuenta es abierta; lo que se controla es el acceso al modelo, y eso lo define
    [ ] Puestos, entrega 2: stock/catálogo. Camino principal: el dueño comparte su Google Sheet con el robot
    (cuenta de servicio, solo lectura), elige columnas visibles/privadas, sincronizamos cada pocos minutos a una
    copia y el notHuman busca ahí (solo las filas que importan, pegadas al último mensaje). CSV como respaldo
+   **Sin plantilla obligatoria**: cada cliente usa su planilla como la tenga. Al conectar, la IA arma un "mapa"
+   (dónde está el encabezado de cada tabla, qué pestañas son catálogo / info / ignorar, qué columna identifica al
+   producto, precio, stock, y qué es privado; ante la duda, privado) y el dueño lo revisa y corrige con un toque.
+   Se guarda con los encabezados: si cambian, se rehace y se avisa, y las columnas nuevas no se usan hasta revisarlas.
+   Lo privado se filtra en el server, nunca llega al modelo. Planillas chicas van enteras (con caché); grandes, se
+   buscan las filas que importan. Lo que no leemos (colores como dato, comentarios) se avisa en la revisión.
+   Planilla de prueba prolija: "Motorbike Stock" (Google Sheets del usuario); falta una desordenada a propósito
 3. [ ] Conexiones: Google Calendar con cuenta de servicio (solo lectura) + mail propio del puesto
    - [ ] **Cobrar en el chat** (Mercado Pago): el notHuman manda un link de pago generado para ese pedido y el
      pago se valida por el webhook de Mercado Pago (no por lo que diga el cliente ni por un comprobante); con el
@@ -143,3 +150,5 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 - [ ] Limpiar NotLean (direcciones y un teléfono que se colaron antes del filtro nuevo)
 - [ ] "image omitted" pegado a un texto se cuela en los ejemplos (el parser solo lo detecta en un mensaje solo)
 - [ ] Traer ejemplos relevantes (no solo los canónicos) según lo que pregunta el cliente
+- [ ] Gestor / convertidor de planillas: ofrecerle al cliente ordenar su planilla (o generarle una copia prolija
+  a partir de la suya) para que el notHuman la entienda mejor. Opcional: nunca obligatorio
