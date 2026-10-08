@@ -96,9 +96,14 @@ export function CreateView() {
   return (
     <main className="mx-auto max-w-5xl px-4 pb-32 pt-6 sm:px-10">
       <motion.div {...reveal}>
-        <Link href="/app" className="font-mono text-xs text-white/40 transition hover:text-acid">
-          {dict.common.back}
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link href="/app" className="font-mono text-xs text-white/40 transition hover:text-acid">
+            {dict.common.back}
+          </Link>
+          <Link href="/app/start" className="font-mono text-xs text-acid transition hover:text-white">
+            {dict.start.guided}
+          </Link>
+        </div>
         <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-acid">{t.eyebrow}</p>
         <h1 className="mt-4 font-serif text-[clamp(2.8rem,8vw,6rem)] leading-[0.9] tracking-tight">
           {t.titleA} <em className="text-acid">{t.titleB}</em>
@@ -204,7 +209,7 @@ function Section({ n, title, sub, children }: { n: string; title: string; sub?: 
   );
 }
 
-function HowToExport() {
+export function HowToExport() {
   const t = useI18n().t.create;
   const [open, setOpen] = useState(false);
   return (

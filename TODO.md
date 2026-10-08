@@ -162,7 +162,11 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 > Solo para pensar e iterar según lo que necesite cada cliente potencial. **Nada de esta sección se implementa**
 > hasta que lo decidamos.
 
-### Recorrido para el primer notHuman (autoservicio)
+### Recorrido para el primer notHuman (autoservicio) — ✅ primera versión en `/app/start`
+Hecho: 5 pasos (cómo habla → tu negocio → tus productos → probalo → a atender), la generación corre en segundo
+plano mientras cuenta el negocio, retoma con lo ya creado (notHuman y puesto en localStorage), entrada desde el
+inicio (si no tiene notHumans) y desde Crear. Falta: notas de voz en el paso 1, "no tengo chats" (personalidades
+prearmadas / cuestionario), el cupo de prueba del plan Free y medir el tiempo hasta la primera respuesta.
 Un cliente nuevo no sabe qué es un notHuman ni un puesto. Para su **primer** notHuman, un recorrido guiado de
 3–4 pasos que crea los mismos objetos por detrás; después entra a la UI normal.
 - Metáfora: **contratar a un empleado**. Sin la palabra "notHuman" ni "puesto": "cómo habla" · "tu negocio" ·

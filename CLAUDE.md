@@ -57,6 +57,11 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
   hasta 40 turnos. Se crea/copia/desactiva desde el perfil del notHuman.
 - La mecánica del chat (espera por varios mensajes, burbujas de a una, cola) está en
   `components/chat/use-conversation.ts`, compartida entre el test drive y el link público.
+- Recorrido guiado para el primer notHuman (`/app/start`, `components/start/start-view.tsx`): "contratar a un
+  empleado" en 5 pasos (cómo habla · tu negocio · tus productos · probalo · a atender) que crea lo mismo que la app
+  (notHuman, puesto, stock, link). La generación arranca al pasar del paso 1 y corre mientras cuenta el negocio;
+  retoma con el notHuman y el puesto guardados en localStorage (`nh-start`). Se entra desde el inicio (banner si no
+  tiene notHumans) y desde Crear.
 - Secciones de la app: **Crear** (`/app/new`) · **notHumans** (`/app/explore`) · **Puestos** (`/app/jobs`).
   notHumans fusiona Explorar + test drive + perfil: lista a la izquierda (`explore-view.tsx`), chat en el centro y
   panel con pestañas Chat/Perfil/Puesto (`workspace.tsx`, `profile-side.tsx`); estado en la URL

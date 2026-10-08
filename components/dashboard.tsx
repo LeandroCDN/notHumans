@@ -2,6 +2,8 @@
 
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "motion/react";
 import Link from "next/link";
+import { can, useMe } from "@/lib/me";
+import { useNotHumans } from "@/lib/nothuman/store";
 import { PlanPanel } from "./account/plan-panel";
 import { Curtain, useArrivedFromLogin } from "./curtain";
 import { useI18n } from "./i18n";
@@ -38,6 +40,7 @@ export function Dashboard({ name, linked }: { name: string; linked?: string }) {
         </motion.p>
 
         <PlanPanel delay={base + 0.55} linked={linked} />
+        <StartBanner delay={base + 0.6} />
 
         <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <TiltCard
@@ -200,5 +203,42 @@ function Manual() {
         </div>
       ))}
     </div>
+  );
+}
+
+/** Sin notHumans todavía (y con plan para crear): la entrada al recorrido guiado, bien a la vista. */
+function StartBanner({ delay }: { delay: number }) {
+  const { t } = useI18n();
+  const b = t.start.banner;
+  const me = useMe();
+  const { list } = useNotHumans();
+  if (!me || !list || list.length > 0 || !can(me, "create")) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-10"
+    >
+      <Link
+        href="/app/start"
+        className="group relative flex flex-col gap-4 overflow-hidden rounded-[32px] bg-acid p-7 text-ink sm:flex-row sm:items-end sm:justify-between sm:p-10"
+      >
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-white/40 blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.9, 0.5] }}
+          transition={{ duration: 5, repeat: Infinity }}
+        />
+        <div className="relative max-w-2xl">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/60">{b.eyebrow}</p>
+          <p className="mt-2 font-serif text-4xl leading-none sm:text-5xl">{b.title}</p>
+          <p className="mt-3 text-ink/70">{b.body}</p>
+        </div>
+        <span className="relative shrink-0 rounded-full bg-ink px-6 py-3 font-medium text-acid transition group-hover:scale-105">
+          {b.cta}
+        </span>
+      </Link>
+    </motion.div>
   );
 }
