@@ -157,3 +157,53 @@ Las reglas del puesto le ganan al estilo (si Martina daba descuentos pero el neg
 - [ ] Traer ejemplos relevantes (no solo los canónicos) según lo que pregunta el cliente
 - [ ] Gestor / convertidor de planillas: ofrecerle al cliente ordenar su planilla (o generarle una copia prolija
   a partir de la suya) para que el notHuman la entienda mejor. Opcional: nunca obligatorio
+
+## Experimental features
+> Solo para pensar e iterar según lo que necesite cada cliente potencial. **Nada de esta sección se implementa**
+> hasta que lo decidamos.
+
+### Recorrido para el primer notHuman (autoservicio)
+Un cliente nuevo no sabe qué es un notHuman ni un puesto. Para su **primer** notHuman, un recorrido guiado de
+3–4 pasos que crea los mismos objetos por detrás; después entra a la UI normal.
+- Metáfora: **contratar a un empleado**. Sin la palabra "notHuman" ni "puesto": "cómo habla" · "tu negocio" ·
+  "dónde atiende"
+- Pasos:
+  1. **Cómo habla**: sube chats de WhatsApp y la generación arranca en segundo plano (mini guía para exportar en
+     iPhone/Android; check de "tengo permiso para usar estas charlas"). Salida para "no tengo chats":
+     personalidades prearmadas o cuestionario de tono (sería nuevo)
+  2. **Tu negocio**: "contame el laburo" (texto o audio) mientras se genera el paso 1, así no se nota la espera
+  3. **Probalo**: test drive haciendo de cliente. Es el momento en que se engancha: antes de pedir plata o número
+  4. **Ponelo a atender**: conectar WhatsApp (ver abajo). Mientras no se pueda, termina en el link público
+- A resolver: el plan Free no tiene IA (¿cupo de prueba? muro de pago después de probar y antes de conectar);
+  la generación necesita la pestaña abierta (retomar donde quedó); medir el tiempo hasta la primera respuesta
+  del test drive (objetivo < 5 min)
+- Forma posible: una ruta tipo `/app/start` con progreso guardado; asigna `job_id` y crea el link o el canal
+
+### Conectar WhatsApp: coexistencia (opción elegida)
+- El comercio **mantiene su número**: Embedded Signup (ventana de Meta) → escanea un QR con la app WhatsApp
+  Business → la app sigue andando en su celular y nosotros recibimos y respondemos por la API. Lo que escribe el
+  dueño nos llega (`smb_message_echoes`) y el bot se calla en esa charla. Al conectar, arrancar en borrador o
+  "solo fuera de horario"
+- Descartado por ahora: darle nosotros un número (sus clientes no lo conocen, el número quedaría nuestro, costo y
+  trámite por número). Quizás más adelante como línea aparte para anuncios. Secundario: "prefiero un número
+  aparte" con un chip/eSIM que trae él (misma ventana, sin QR)
+- Lo que nos frena a nosotros (lo más lento, no depende de código):
+  - **Verificar el negocio en Meta**: figura legal (monotributo para arrancar; sociedad más adelante), documentos
+    con ese nombre, **dominio propio**, web mínima con HTTPS que muestre nombre legal y dirección, y mail en ese
+    dominio. De días a semanas; rechazan si los nombres no coinciden
+  - **App Review** de los permisos de WhatsApp: videos del flujo, privacidad, **términos** (no los tenemos) y
+    borrado de datos. Presentarlo como atención al cliente de negocios, no como asistente de IA general
+  - Hasta la aprobación solo se conectan cuentas de prueba (la que usamos hoy, creada desde la app de
+    desarrollador, no sirve para Embedded Signup)
+- Lo que puede frenar a cada comercio:
+  - Tiene que usar **WhatsApp Business** (no el común) y el número llevar unos **7+ días de uso** en esa app
+  - Si el número ya estuvo en la API con otro proveedor, hay una espera antes de poder usar coexistencia
+  - Cuenta de Facebook para la ventana de Meta; revisión del nombre visible; posible tarjeta en Meta
+  - 24 h para sincronizar el historial (si no, repetir); según proveedores, abrir la app cada 14 días o se corta
+  - Grupos no se sincronizan; listas de difusión quedan de solo lectura
+- Lo técnico nuestro: Embedded Signup **v4** (la v2 deja de funcionar el 15/10/2026), token por canal cifrado,
+  webhooks `history` / `smb_app_state_sync` / `smb_message_echoes`. Probar qué pasa si el dueño responde desde
+  WhatsApp Web (los dispositivos vinculados "no soportados" no mandan webhook → el bot podría pisarlo)
+- Plan B si Meta tarda: un proveedor que ya es socio de Meta (360dialog o similar) hace la Embedded Signup por
+  nosotros. Va contra el "flujo propio sin terceros": decidirlo llegado el caso
+- Pendiente de confirmar con un número argentino real: que la coexistencia esté habilitada en Argentina
