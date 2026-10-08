@@ -9,7 +9,7 @@ import { getLocale } from "@/lib/i18n/server";
 import { operator } from "@/lib/legal";
 
 // Términos y condiciones públicos (sin login). Meta los pide para revisar la app: el servicio se presenta como
-// atención al cliente para negocios. Quién lo opera sale de LEGAL_NAME / LEGAL_LOCATION / CONTACT_EMAIL.
+// atención al cliente para negocios. Quién lo opera sale de lib/legal.ts.
 
 export const metadata: Metadata = { title: "Terms · notHumans" };
 

@@ -1,11 +1,13 @@
 import "server-only";
 
-// Quién opera notHumans, para las páginas legales y el footer. Sale de variables de entorno (LEGAL_NAME,
-// LEGAL_LOCATION, CONTACT_EMAIL) para cambiarlo sin tocar código (por ejemplo, cuando haya dominio y mail propio).
+// Quién opera notHumans, para las páginas legales y el footer. El nombre es fijo; la ciudad y el mail salen de
+// LEGAL_LOCATION y CONTACT_EMAIL (el mail cambia cuando haya dominio propio).
 
-export type Operator = { name: string | null; location: string | null; email: string | null };
+export const LEGAL_NAME = "Leandro Ariel Labiano Ramo";
+
+export type Operator = { name: string; location: string | null; email: string | null };
 
 export function operator(): Operator {
   const v = (key: string) => process.env[key]?.trim() || null;
-  return { name: v("LEGAL_NAME"), location: v("LEGAL_LOCATION"), email: v("CONTACT_EMAIL") };
+  return { name: LEGAL_NAME, location: v("LEGAL_LOCATION"), email: v("CONTACT_EMAIL") };
 }

@@ -9,8 +9,7 @@ import { getLocale } from "@/lib/i18n/server";
 import { operator } from "@/lib/legal";
 
 // Política de privacidad pública (sin login). Meta la pide para publicar la app de WhatsApp, y también es la
-// página de "cómo borrar tus datos" (#borrar). Quién lo opera y el mail salen de LEGAL_NAME / LEGAL_LOCATION /
-// CONTACT_EMAIL (lib/legal.ts).
+// página de "cómo borrar tus datos" (#borrar). Quién lo opera y el mail salen de lib/legal.ts.
 
 export const metadata: Metadata = { title: "Privacy · notHumans" };
 

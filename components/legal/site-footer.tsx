@@ -27,7 +27,7 @@ export function SiteFooter({ email }: { email: string | null }) {
   );
 }
 
-/** "notHumans es un servicio operado por …, … Contacto: …" (si no está configurado el nombre, no se muestra). */
+/** "notHumans es un servicio operado por …, … Contacto: …". */
 export function OperatorLine({
   name,
   location,

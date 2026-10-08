@@ -104,8 +104,8 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
   datos). Meta la pide para publicar la app: sin publicar, el webhook solo recibe pruebas. Términos en `/terms`
   (textos en `terms`; el servicio se presenta como atención al cliente para negocios, no como asistente de IA
   general). Las dos muestran "notHumans es un servicio operado por …" y todas las páginas públicas el mismo footer
-  (`components/legal/site-footer.tsx`: ©, Términos, Privacidad, mail). Nombre, ciudad y mail salen de `LEGAL_NAME`,
-  `LEGAL_LOCATION` y `CONTACT_EMAIL` (`lib/legal.ts`), para cambiarlos sin tocar código.
+  (`components/legal/site-footer.tsx`: ©, Términos, Privacidad, mail). El nombre del operador está fijo en `lib/legal.ts`
+  (pedido del usuario); la ciudad y el mail salen de `LEGAL_LOCATION` y `CONTACT_EMAIL`.
 - Lista de espera de la home: tabla `waitlist` (`/api/waitlist`, público, con trampa para bots y límite por IP).
 - localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 
