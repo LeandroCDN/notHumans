@@ -101,7 +101,11 @@ negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes 
   con `connections`. Robot: `nothumans-stock@nothuman-510723.iam.gserviceaccount.com`. Planilla de prueba del usuario:
   "Motorbike Stock". Sin la clave (dev / `LLM_MOCK=1`) hay planillas de mentira (`lib/stock/fixtures.ts`).
 - Política de privacidad pública en `/privacy` (EN/ES, textos en `legal` del diccionario; `#borrar` = cómo borrar
-  datos; mail de `CONTACT_EMAIL`). Meta la pide para publicar la app: sin publicar, el webhook solo recibe pruebas.
+  datos). Meta la pide para publicar la app: sin publicar, el webhook solo recibe pruebas. Términos en `/terms`
+  (textos en `terms`; el servicio se presenta como atención al cliente para negocios, no como asistente de IA
+  general). Las dos muestran "notHumans es un servicio operado por …" y todas las páginas públicas el mismo footer
+  (`components/legal/site-footer.tsx`: ©, Términos, Privacidad, mail). Nombre, ciudad y mail salen de `LEGAL_NAME`,
+  `LEGAL_LOCATION` y `CONTACT_EMAIL` (`lib/legal.ts`), para cambiarlos sin tocar código.
 - Lista de espera de la home: tabla `waitlist` (`/api/waitlist`, público, con trampa para bots y límite por IP).
 - localStorage queda solo como respaldo: si falla el guardado, el notHuman queda ahí y Explorar ofrece subirlo.
 

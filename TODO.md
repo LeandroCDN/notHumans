@@ -195,7 +195,7 @@ Un cliente nuevo no sabe qué es un notHuman ni un puesto. Para su **primer** no
   - **Verificar el negocio en Meta**: figura legal (monotributo para arrancar; sociedad más adelante), documentos
     con ese nombre, **dominio propio**, web mínima con HTTPS que muestre nombre legal y dirección, y mail en ese
     dominio. De días a semanas; rechazan si los nombres no coinciden
-  - **App Review** de los permisos de WhatsApp: videos del flujo, privacidad, **términos** (no los tenemos) y
+  - **App Review** de los permisos de WhatsApp: videos del flujo, privacidad, **términos** (✅ `/terms`, primera versión) y
     borrado de datos. Presentarlo como atención al cliente de negocios, no como asistente de IA general
   - Hasta la aprobación solo se conectan cuentas de prueba (la que usamos hoy, creada desde la app de
     desarrollador, no sirve para Embedded Signup)

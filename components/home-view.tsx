@@ -7,6 +7,7 @@ import { HeroChat } from "./hero-chat";
 import { useI18n } from "./i18n";
 import { LanguageSwitch } from "./language-switch";
 import { type LoginMethods, LoginProvider, useLogin } from "./login";
+import { SiteFooter } from "./legal/site-footer";
 import { Logo } from "./logo";
 import { Magnetic } from "./magnetic";
 import { ScrambleText } from "./scramble-text";
@@ -25,12 +26,13 @@ export function HomeView({
   loggedIn,
   methods,
   loginError,
+  contactEmail,
 }: {
   loggedIn: boolean;
   methods: LoginMethods;
   loginError?: string;
+  contactEmail: string | null;
 }) {
-  const { t } = useI18n();
   return (
     <LoginProvider loggedIn={loggedIn} methods={methods} initialError={loginError}>
       <Backdrop />
@@ -40,18 +42,7 @@ export function HomeView({
         <Marquee />
         <Finale />
       </main>
-      <footer className="flex flex-col items-center justify-between gap-2 px-6 py-10 font-mono text-[11px] text-white/30 sm:flex-row sm:px-10">
-        <span>notHumans © 2026</span>
-        <span className="flex gap-4">
-          <a href="/pricing" className="transition hover:text-acid">
-            {t.home.pricing}
-          </a>
-          <a href="/privacy" className="transition hover:text-acid">
-            {t.home.privacy}
-          </a>
-        </span>
-        <span>{t.home.footer}</span>
-      </footer>
+      <SiteFooter email={contactEmail} />
     </LoginProvider>
   );
 }

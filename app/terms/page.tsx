@@ -8,16 +8,14 @@ import { dictionaries } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/server";
 import { operator } from "@/lib/legal";
 
-// Política de privacidad pública (sin login). Meta la pide para publicar la app de WhatsApp, y también es la
-// página de "cómo borrar tus datos" (#borrar). Quién lo opera y el mail salen de LEGAL_NAME / LEGAL_LOCATION /
-// CONTACT_EMAIL (lib/legal.ts).
+// Términos y condiciones públicos (sin login). Meta los pide para revisar la app: el servicio se presenta como
+// atención al cliente para negocios. Quién lo opera sale de LEGAL_NAME / LEGAL_LOCATION / CONTACT_EMAIL.
 
-export const metadata: Metadata = { title: "Privacy · notHumans" };
+export const metadata: Metadata = { title: "Terms · notHumans" };
 
-export default async function PrivacyPage() {
-  const t = dictionaries[await getLocale()].legal;
+export default async function TermsPage() {
+  const t = dictionaries[await getLocale()].terms;
   const op = operator();
-  const email = op.email;
   return (
     <>
       <Backdrop />
@@ -49,29 +47,13 @@ export default async function PrivacyPage() {
           </section>
         ))}
 
-        <section id="borrar" className="mt-10 scroll-mt-10 rounded-[28px] border border-acid/30 bg-acid/[0.05] p-6">
-          <h2 className="font-serif text-3xl">{t.deleteTitle}</h2>
-          <ul className="mt-4 space-y-3">
-            {t.deleteItems.map((item) => (
-              <li key={item} className="flex gap-3 text-white/75">
-                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-acid" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
         <section className="mt-10">
           <h2 className="font-serif text-3xl">{t.contactTitle}</h2>
           <p className="mt-3 text-white/70">
-            {email ? (
-              <>
-                {t.contact(email).split(email)[0]}
-                <a href={`mailto:${email}`} className="text-acid underline-offset-4 hover:underline">
-                  {email}
-                </a>
-                {t.contact(email).split(email)[1]}
-              </>
+            {op.email ? (
+              <a href={`mailto:${op.email}`} className="text-acid underline-offset-4 hover:underline">
+                {t.contact(op.email)}
+              </a>
             ) : (
               t.contactFallback
             )}
@@ -82,7 +64,7 @@ export default async function PrivacyPage() {
           {t.back}
         </Link>
       </main>
-      <SiteFooter email={email} />
+      <SiteFooter email={op.email} />
     </>
   );
 }
