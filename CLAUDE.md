@@ -6,6 +6,8 @@ abiertas con planes, precios al costo y lista de espera; todavía sin clientes q
 negocio de un amigo del dueño. Estrategia comercial en `VENTAS.md`; pendientes en `TODO.md`.
 
 ## Cómo trabajar acá
+- **Sesiones cortas.** Al empezar, leer `ESTADO.md` (el estado en pocas líneas). Al terminar, actualizarlo
+  (máx. ~30 líneas: qué cambió, qué sigue) y pushearlo. No hace falta leer las otras sesiones.
 - Hablar con el usuario en español rioplatense (voseo). Comentarios de código en español.
 - Pushear directo a `main` (pedido explícito del usuario: nada de PRs). También mantener la rama de la sesión al día.
 - Antes de pushear: `npx tsc --noEmit`, `npm test` y `npm run build`. Las pruebas en el navegador las hace el
